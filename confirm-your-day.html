@@ -1,0 +1,2767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Confirm Your Day — Prototype</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<style>
+  :root{
+    --primary:#009EC7;
+    --primary-tint:#E8F8FF;
+    --charged:#33A99E;
+    --charged-tint:#EAF7F6;
+    --job2:#C2660D;
+    --job2-tint:#FBEEE1;
+    --dark:#263238;
+    --g1:#F5F5F5; --g2:#EBEBEB; --g3:#DDDDDD; --g4:#CACACA; --g5:#9B9B9B; --g6:#808080; --g7:#454545;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0; overflow-anchor:none;}
+  body{
+    font-family:'Roboto', sans-serif;
+    background:#1a1d1f;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:40px 20px;
+    gap:24px;
+  }
+
+  /* ---------- Phone frame ---------- */
+  .phone{
+    position:relative;
+    width:390px;
+    height:844px;
+    background:#000;
+    border-radius:55px;
+    padding:14px;
+    box-shadow:0 30px 80px rgba(0,0,0,0.6), 0 0 0 2px #333;
+    flex-shrink:0;
+  }
+  .screen{
+    position:relative;
+    width:100%;
+    height:100%;
+    border-radius:42px;
+    overflow:hidden;
+    background:#fff;
+  }
+  .notch{
+    position:absolute;
+    top:30px; left:50%;
+    transform:translateX(-50%);
+    width:67px; height:19px;
+    background:#000;
+    border-radius:10px;
+    z-index:50;
+  }
+  .status-bar{
+    position:absolute;
+    top:0; left:0; right:0;
+    height:44px;
+    background:#000;
+    z-index:0;
+    pointer-events:none;
+  }
+
+  /* ---------- Scenes ---------- */
+  .scene{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    opacity:0;
+    pointer-events:none;
+    z-index:0;
+    transition: opacity .16s ease-out;
+  }
+  .scene.active{
+    opacity:1;
+    pointer-events:auto;
+    z-index:1;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .scene{transition:none;}
+  }
+
+  /* ---------- Status bar (lock screens) ---------- */
+  .statusbar{
+    align-self:stretch;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:16px 28px 0;
+    color:#fff;
+    font-size:14px;
+    font-weight:500;
+    z-index:10;
+  }
+  .statusbar, .lockscreen .statusbar{display:none;}
+
+  .statusbar .icons{display:flex; align-items:center; gap:5px;}
+  .battery{
+    width:24px; height:12px;
+    border:1px solid rgba(255,255,255,0.8);
+    border-radius:3px;
+    position:relative;
+    padding:1.5px;
+  }
+  .battery::after{
+    content:'';
+    position:absolute; top:3.5px; right:-3px;
+    width:2px; height:5px;
+    background:rgba(255,255,255,0.8);
+    border-radius:0 1px 1px 0;
+  }
+  .battery-fill{height:100%; background:#fff; border-radius:1px;}
+
+  /* ---------- Lock screen ---------- */
+  .lockscreen{
+    flex:1;
+    background:linear-gradient(180deg,#3a4a5c 0%, #232b36 45%, #14181d 100%);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding-top:70px;
+    position:relative;
+    overflow:hidden;
+  }
+  .lock-time{
+    font-size:88px;
+    font-weight:300;
+    color:#fff;
+    line-height:1;
+    letter-spacing:-2px;
+  }
+  .lock-date{
+    font-size:17px;
+    font-weight:400;
+    color:rgba(255,255,255,0.9);
+    margin-top:6px;
+  }
+  .notif-stack{
+    width:100%;
+    padding:36px 14px 0;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    flex:1;
+    justify-content:flex-start;
+  }
+  .notif{
+    background:rgba(255,255,255,0.16);
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+    border-radius:16px;
+    padding:12px 14px;
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    animation: dropIn .7s ease;
+    cursor:default;
+  }
+  @media (prefers-reduced-motion: reduce){ .notif{animation:none;} }
+  .notif.tappable{cursor:pointer;}
+  .notif.faded{opacity:0.45;}
+  @keyframes dropIn{
+    from{opacity:0; transform:translateY(-14px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  .notif-icon{
+    width:28px; height:28px;
+    border-radius:8px;
+    background:var(--primary);
+    color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:500;
+    flex-shrink:0;
+  }
+  .notif-body{flex:1; min-width:0;}
+  .notif-top{
+    display:flex; justify-content:space-between; align-items:baseline; gap:8px;
+  }
+  .notif-app{
+    font-size:12px; font-weight:500; color:rgba(255,255,255,0.85);
+    text-transform:uppercase; letter-spacing:0.3px;
+  }
+  .notif-when{font-size:12px; color:rgba(255,255,255,0.6); flex-shrink:0;}
+  .notif-title{
+    font-size:14.5px; font-weight:500; color:#fff; margin-top:2px;
+    line-height:1.3;
+  }
+  .notif-desc{
+    font-size:13.5px; font-weight:400; color:rgba(255,255,255,0.85);
+    margin-top:2px; line-height:1.35;
+  }
+
+  /* ---------- App bar ---------- */
+  .appbar{
+    position:relative;
+    background:var(--primary);
+    color:#fff;
+    padding:44px 16px 14px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-shrink:0;
+  }
+  .appbar.appbar-plain{
+    background:#fff;
+    color:var(--g7);
+    border-bottom:1px solid var(--g2);
+  }
+  .appbar .back{
+    font-size:22px;
+    line-height:1;
+    cursor:pointer;
+    padding:2px 4px;
+  }
+  .appbar .back.plain{ color:var(--g7); font-size:19px; }
+  .appbar.edit-appbar{justify-content:space-between;}
+  .appbar-cancel-btn{
+    color:var(--g6); font-size:14px; font-weight:400;
+    background:transparent; padding:0; border:none; cursor:pointer;
+  }
+  .appbar-cancel-btn:active{opacity:0.7;}
+  .appbar-save-btn{
+    color:var(--primary); font-size:14px; font-weight:400;
+    background:transparent; padding:0; border:none; cursor:pointer;
+  }
+  .appbar-save-btn:active{opacity:0.7;}
+  .appbar-titles{display:flex; flex-direction:column;}
+  .appbar-titles.centered{
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+  }
+  .appbar-title{font-size:17px; font-weight:500;}
+  .appbar-subtitle{font-size:12.5px; font-weight:400; opacity:0.9; margin-top:1px;}
+
+  /* ---------- Review screen ---------- */
+  .review-scroll{
+    flex:1;
+    overflow-y:auto;
+    overflow-x:hidden;
+    background:var(--g1);
+    -webkit-overflow-scrolling:touch;
+  }
+  .summary{
+    padding:16px 20px 20px;
+  }
+  .summary-line{
+    font-size:24px;
+    font-weight:300;
+    color:var(--g7);
+    line-height:1.35;
+  }
+  .summary-line .num{
+    color:var(--charged);
+    font-weight:500;
+    display:inline-block;
+    transition:transform .5s ease;
+  }
+  .summary-line .num.pop{
+    animation:pop .55s ease;
+  }
+  @keyframes pop{
+    0%{transform:scale(1);}
+    40%{transform:scale(1.18);}
+    100%{transform:scale(1);}
+  }
+  @media (prefers-reduced-motion: reduce){ .summary-line .num.pop{animation:none;} }
+  .summary-sub{
+    font-size:15px;
+    font-weight:400;
+    color:var(--g6);
+    margin-top:4px;
+  }
+
+  /* ---------- Shared job cards ---------- */
+  .tl-card{
+    position:relative;
+    min-width:0;
+    background:#fff;
+    border-radius:14px;
+    padding:14px 16px;
+    cursor:pointer;
+    transition:box-shadow .5s ease;
+    min-height:64px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    box-shadow:0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .tl-card:active{box-shadow:0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);}
+  /* Job cards in the Cards concept are 30% taller than the shared baseline */
+  .card-stack .tl-card:not(.notcharged){ min-height:83px; padding:18px 16px; }
+  .tl-card.notcharged{
+    background:transparent;
+    box-shadow:none;
+    outline:1.5px dashed var(--g4);
+    outline-offset:-1.5px;
+  }
+  .tl-card.notcharged:active{box-shadow:none;}
+  .tl-card.notcharged.unreviewed{
+    outline-color:var(--g4);
+  }
+  .tl-card-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    font-size:16px;
+    font-weight:500;
+    color:var(--g7);
+  }
+  .tl-card-icon{margin-right:6px; font-size:15px;}
+  .tl-card-dur{font-weight:400; color:var(--g7);}
+  .tl-card-right{display:flex; flex-direction:column; align-items:flex-end; gap:2px;}
+  .tl-card-pills{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin-top:7px;
+    flex-wrap:wrap;
+  }
+  .tl-card-pills:empty{display:none; margin-top:0;}
+  .tl-jobnum-pill{
+    display:inline-flex;
+    align-items:center;
+    font-size:12px;
+    font-weight:500;
+    color:#fff;
+    background:#57646F;
+    padding:3px 10px;
+    border-radius:6px;
+    line-height:1.4;
+  }
+  .tl-status-pill{
+    display:inline-flex;
+    align-items:center;
+    font-size:12px;
+    font-weight:500;
+    color:#fff;
+    padding:3px 10px;
+    border-radius:20px;
+    line-height:1.4;
+  }
+  .tl-status-pill.charged{background:var(--charged);}
+  .tl-status-pill.notcharged{background:var(--g6);}
+  .tl-status-pill.pending{
+    background:#fff;
+    color:var(--g6);
+    border:1.5px dashed var(--g4);
+    padding:1.5px 8.5px;
+  }
+  .tl-type-pill{
+    display:inline-flex;
+    align-items:center;
+    font-size:12px;
+    font-weight:500;
+    color:#fff;
+    background:var(--primary);
+    padding:3px 10px;
+    border-radius:20px;
+    line-height:1.4;
+  }
+  .tl-supplier-logo{
+    height:22px;
+    width:auto;
+    max-width:110px;
+    object-fit:contain;
+    display:block;
+    border-radius:4px;
+  }
+  .tl-linked-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-top:10px;
+    padding-top:10px;
+    border-top:1px dashed var(--g3);
+    font-size:14px;
+    color:var(--g7);
+    cursor:pointer;
+  }
+  .tl-linked-left{display:flex; align-items:center; gap:8px;}
+  .tl-linked-type{font-weight:500; color:var(--primary);}
+  .tl-linked-dur{font-weight:400; color:var(--g7);}
+  .tl-linked-range{font-size:12.5px; color:var(--g6);}
+  .tl-gps-pill{
+    display:inline-flex;
+    align-items:center;
+    font-size:12px;
+    font-weight:500;
+    color:var(--charged);
+    background:var(--charged-tint);
+    padding:3px 10px;
+    border-radius:6px;
+    line-height:1.4;
+  }
+  .tl-card-meta:empty{display:none; margin-top:0;}
+  .tl-card-meta{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    font-size:15px;
+    color:var(--g6);
+    margin-top:5px;
+  }
+  .footer-space{height:88px;}
+
+  /* ---------- Concept: Cards ---------- */
+  .card-stack{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    padding:20px 16px 0;
+  }
+  .card-stack .tl-card{ cursor:pointer; }
+  .job-card-break{
+    font-size:13px;
+    color:var(--g6);
+    margin-top:2px;
+  }
+  .job-card-break:empty{display:none;}
+  .tl-card-dur.charged-dur{color:var(--charged);}
+
+  /* ---------- In-situ break tag ---------- */
+  .break-row{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:8px;
+    margin-top:auto;
+  }
+  .break-tag{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    font-size:12px;
+    font-weight:500;
+    color:var(--g6);
+    background:var(--g1);
+    padding:4px 10px;
+    border-radius:999px;
+    line-height:1.4;
+  }
+  .break-add{
+    font-size:12px;
+    font-weight:500;
+    color:var(--primary);
+    cursor:pointer;
+  }
+  .break-add:active{opacity:0.7;}
+  .break-dur{color:var(--g7);}
+  .break-step{
+    font-size:16px;
+    line-height:1;
+    color:var(--g6);
+    cursor:pointer;
+    padding:2px 4px;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+  .break-step:active{color:var(--primary);}
+  .break-remove{margin-left:2px; font-size:18px;}
+
+  /* ---------- Drag-to-reorder in Cards ---------- */
+  .dragging{opacity:0.95; cursor:grabbing; box-shadow:0 10px 25px rgba(0,0,0,0.18); transform:scale(1.02); z-index:10;}
+  .dragging-ghost{opacity:0.35;}
+
+  /* ---------- Concept: Jobs ---------- */
+  .jobs-view{padding:20px 16px 0;}
+  .jobs-card{
+    background:#fff; border-radius:14px; padding:16px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    margin-bottom:12px; cursor:pointer;
+    min-height:170px; display:flex; flex-direction:column; box-sizing:border-box;
+  }
+  .jobs-card-header{
+    display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;
+  }
+  .jobs-card-title{font-size:17px; font-weight:500; color:var(--g7);}
+  .jobs-card-dur{font-size:16px; color:var(--g7); font-weight:500; cursor:pointer;}
+  .jobs-card-meta{font-size:13px; color:var(--g6); margin-bottom:12px;}
+  .jobs-add-btn{
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    width:100%; padding:10px 0; border:1.5px dashed var(--g3);
+    border-radius:10px; background:#fff; color:var(--g7);
+    font-size:13px; cursor:pointer;
+  }
+  .jobs-add-btn:active{background:var(--g1);}
+  .jobs-gap-card{
+    background:transparent; outline:1.5px dashed var(--g4); outline-offset:-1.5px;
+    box-shadow:none; padding:14px 16px;
+  }
+  .jobs-gap-card .jobs-card-dur{color:var(--g7);}
+  .jobs-gap-row{display:flex; justify-content:space-between; align-items:center; margin-top:8px;}
+  .jobs-gap-pills{display:flex; gap:6px; flex-wrap:wrap;}
+  .jobs-add-card{
+    text-align:center; font-size:14px; color:var(--g7); font-weight:500;
+    min-height:170px; display:flex; align-items:center; justify-content:center;
+    padding:16px; box-sizing:border-box;
+  }
+  .add-time-bottom{display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:500;}
+  .add-time-bottom.jobs-add-card{font-size:14px; min-height:64px;}
+  .gap-prompt{text-align:center; font-size:14px; font-weight:500; color:var(--g7);}
+  .gap-prompt-sub{font-size:13px; font-weight:400; color:var(--g6); margin-top:4px;}
+  .new-card{animation: appearIn .8s ease;}
+  .new-break{animation: appearIn .8s ease;}
+  @keyframes appearIn{
+    from { opacity:0; transform:translateY(16px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+  .jobs-includes{margin-top:10px;}
+  .jobs-includes-label{font-size:11.5px; color:var(--g6); text-transform:uppercase; letter-spacing:0.4px; margin-bottom:6px;}
+  .jobs-include-list{display:flex; flex-wrap:wrap; gap:6px;}
+  .jobs-include-tag{
+    font-size:13px; font-weight:500; color:var(--primary); background:var(--primary-tint);
+    padding:5px 12px; border-radius:999px;
+  }
+  .new-badge{animation: badgeIn .8s ease;}
+  @keyframes badgeIn{
+    0%{opacity:0; transform:scale(0.7);}
+    60%{transform:scale(1.08);}
+    100%{opacity:1; transform:scale(1);}
+  }
+
+  /* ---------- Concept: Review Queue ---------- */
+  .queue-view{padding:16px 16px 0;}
+  .queue-status{
+    font-size:13px; color:var(--g6); margin-bottom:12px; text-align:center;
+  }
+  .queue-card{
+    background:#fff; border-radius:14px; padding:16px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    margin-bottom:12px; cursor:pointer;
+  }
+  .queue-card-title{font-size:15px; font-weight:500; color:var(--g7); margin-bottom:4px;}
+  .queue-card-sub{font-size:13px; color:var(--g6); margin-bottom:10px;}
+  .queue-done{
+    font-size:14px; color:var(--charged); text-align:center; padding:24px 0;
+  }
+
+  /* ---------- Concept: Checklist ---------- */
+  .check-view{padding:16px 16px 0;}
+  .check-progress{
+    font-size:13px; color:var(--g6); text-align:center; margin-bottom:14px;
+  }
+  .check-row{
+    background:#fff; border-radius:14px; padding:14px 16px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    margin-bottom:10px; display:flex; align-items:flex-start; gap:12px;
+    cursor:pointer;
+  }
+  .check-circle{
+    width:22px; height:22px; border-radius:50%;
+    border:2px solid var(--g4); flex-shrink:0; margin-top:1px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .check-row.done .check-circle{border-color:var(--charged); background:var(--charged);}
+  .check-row.done .check-circle::after{content:'✓'; color:#fff; font-size:13px;}
+  .check-row.done .check-title{color:var(--g6);}
+  .check-body{flex:1;}
+  .check-title{font-size:15px; font-weight:500; color:var(--g7);}
+  .check-sub{font-size:12.5px; color:var(--g6); margin-top:2px;}
+  .check-action{
+    font-size:12px; color:var(--primary); margin-top:8px; font-weight:500;
+  }
+
+  /* ---------- Concept: Meter ---------- */
+  .meter-view{padding:16px 16px 0;}
+  .meter-head{
+    background:#fff; border-radius:14px; padding:16px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    margin-bottom:14px;
+  }
+  .meter-labels{display:flex; justify-content:space-between; font-size:13px; color:var(--g6); margin-bottom:8px;}
+  .meter-track{height:14px; background:var(--g2); border-radius:999px; overflow:hidden;}
+  .meter-fill{height:100%; background:var(--charged); border-radius:999px; transition:width .6s ease;}
+  .meter-list{margin-top:6px;}
+  .meter-row{
+    background:#fff; border-radius:14px; padding:14px 16px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; gap:8px;
+  }
+  .meter-row-label{font-size:14px; font-weight:500; color:var(--g7);}
+  .meter-row-sub{font-size:12px; color:var(--g6); margin-top:2px;}
+  .meter-tag{
+    font-size:11.5px; font-weight:500; padding:4px 10px; border-radius:999px;
+    background:var(--g1); color:var(--g6); white-space:nowrap;
+  }
+  .meter-tag.charged{background:var(--charged-tint); color:var(--charged);}
+  .meter-tag.unknown{background:var(--g1); color:var(--g6);}
+  .meter-tag.unpaid{background:#fff3e0; color:#e68a00;}
+
+  /* ---------- Edit entry sheet (slides up, same pattern as the Break sheet) ---------- */
+  .edit-sheet{
+    max-height:82%; display:flex; flex-direction:column; padding:0; overflow:hidden;
+  }
+  .edit-sheet .sheet-handle{margin:8px auto 4px;}
+  .edit-sheet-header{
+    position:relative; display:flex; align-items:center; justify-content:space-between;
+    padding:12px 32px 18px; border-bottom:1px solid var(--g2); flex-shrink:0;
+  }
+  .edit-sheet-header .appbar-title{font-size:18px; font-weight:600; color:var(--g7);}
+  .edit-screen{
+    flex:0 1 auto; overflow-y:auto; background:#fff;
+    padding:24px 0 calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+  .field-list{
+    background:#fff; border-top:1px solid var(--g2); border-bottom:1px solid var(--g2);
+    margin-bottom:20px;
+  }
+  .field-row{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:14px 16px; border-bottom:1px solid var(--g1); cursor:pointer;
+  }
+  .field-row:last-child{border-bottom:none;}
+  .field-row:active{background:var(--g1);}
+  .field-row-label{font-size:15px; font-weight:400; color:var(--g7);}
+  .field-row-value{
+    display:flex; align-items:center; gap:6px;
+    font-size:15px; color:var(--g7); text-align:right;
+  }
+  .field-row-value.placeholder{color:var(--g4);}
+  .field-row-value .chevron{color:var(--g4); font-size:16px;}
+  .field-row-picker{
+    display:none; background:var(--g1); padding:16px; border-bottom:1px solid var(--g2);
+  }
+  .field-row-picker.open{display:block;}
+  /* Nike Run Club-style slider: big live readout, full-width drag surface, tick
+     scale — used everywhere a duration/time gets set, in place of a +/- stepper. */
+  .rpe-slider{padding:4px 2px 0;}
+  .rpe-value{
+    font-size:36px; font-weight:300; color:var(--g7); text-align:center; margin-bottom:14px;
+    transition:transform .2s ease;
+  }
+  .rpe-value.pop{transform:scale(1.08);}
+  .rpe-track{
+    position:relative; height:22px; border-radius:11px; background:var(--g3);
+    touch-action:none; cursor:pointer; margin:0 24px;
+  }
+  .rpe-fill{
+    position:absolute; left:-24px; top:0; bottom:0; border-radius:11px; background:var(--primary);
+  }
+  .rpe-thumb{
+    position:absolute; top:50%; left:0; width:44px; height:34px; border-radius:17px;
+    background:#fff; border:3px solid var(--primary); box-shadow:0 3px 10px rgba(0,0,0,0.28);
+    transform:translate(-50%,-50%); cursor:grab;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .rpe-thumb::after{
+    content:''; width:2px; height:14px; border-radius:1px; background:var(--g5);
+    box-shadow:-6px 0 0 var(--g5), 6px 0 0 var(--g5);
+  }
+  .rpe-thumb:active{cursor:grabbing; transform:translate(-50%,-50%) scale(0.96);}
+  .rpe-ticks{
+    display:flex; justify-content:space-between; margin-top:10px; padding:0 2px;
+  }
+  .rpe-tick{font-size:10.5px; color:var(--g5);}
+
+  /* ---------- Start/End time boxes (plain, non-interactive) ---------- */
+  .edit-time-boxes{
+    display:flex; gap:12px; margin:0 32px 20px;
+  }
+  .edit-time-box{
+    flex:1; background:#fff; border:1.5px solid var(--g3); border-radius:14px;
+    padding:14px 18px;
+    display:flex; flex-direction:row; align-items:center; justify-content:space-between;
+    text-align:left;
+  }
+  .edit-time-box-label{font-size:13px; color:var(--g6);}
+  .edit-time-box-value{font-size:16px; font-weight:600; color:var(--g7);}
+  .edit-hint{
+    font-size:12px; color:var(--g5); text-align:center; margin-top:14px;
+  }
+  .type-grid{
+    display:grid; grid-template-columns:repeat(2, 1fr); gap:8px;
+  }
+  .type-btn{
+    padding:12px 8px; border-radius:10px; border:1.5px solid var(--g3);
+    background:#fff; color:var(--g7); font-size:14px; font-weight:500;
+    cursor:pointer;
+  }
+  .type-btn:active{background:var(--g1);}
+  .type-btn.selected{
+    border-color:var(--primary); background:var(--primary-tint); color:var(--primary);
+  }
+  .field-list.actions .field-row-label{font-weight:500;}
+  .field-list.actions .field-row.split .field-row-label{color:var(--primary);}
+  .field-list.actions .field-row.delete .field-row-label{color:#E5484D;}
+
+  /* edit sheet */
+  #editCancelBtn, #editSaveBtn{font-size:14px; line-height:1;}
+  #editTypeRow, #editTypePicker{display:none !important;}
+  .edit-delete-text{text-align:center; font-size:14px; font-weight:400; color:#E5484D; padding:0 16px 8px; cursor:pointer; margin:0 0 8px;}
+  .edit-delete-text:active{opacity:0.8;}
+  .edit-round-row{text-align:center; margin:0 20px 24px;}
+  .edit-round-btn{
+    font-size:14px; font-weight:400; color:var(--primary);
+    background:transparent; border:none; padding:4px 0; cursor:pointer;
+  }
+  .edit-round-btn:disabled{opacity:0.4; cursor:default;}
+  .edit-round-btn:active{opacity:0.7;}
+
+  .sticky-footer{
+    position:absolute;
+    left:0; right:0; bottom:0;
+    padding:14px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+    background:#fff;
+    border-top:1px solid var(--g2);
+  }
+  .confirm-btn{
+    width:100%;
+    height:52px;
+    background:var(--primary);
+    color:#fff;
+    border:none;
+    border-radius:4px;
+    font-family:'Roboto', sans-serif;
+    font-size:16px;
+    font-weight:500;
+    cursor:pointer;
+  }
+  .confirm-btn:active{opacity:0.9;}
+
+  /* ---------- Bottom sheet ---------- */
+  .sheet-overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,0.4);
+    display:none;
+    align-items:flex-end;
+    z-index:100;
+  }
+  .sheet-overlay.open{display:flex;}
+  .sheet{
+    width:100%;
+    background:#fff;
+    border-radius:8px 8px 0 0;
+    padding:10px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+    animation:slideUp .5s ease;
+  }
+  @media (prefers-reduced-motion: reduce){ .sheet{animation:none;} }
+  @keyframes slideUp{
+    from{transform:translateY(100%);}
+    to{transform:translateY(0);}
+  }
+  #addTimeSheet{animation:none;}
+  #addTimeOverlay.open #addTimeSheet{animation:slideUp .5s ease;}
+  #addTimeOverlay.open #addTimeSheet.sheet-closing{animation:slideDown .5s ease forwards;}
+  @keyframes slideDown{
+    from{transform:translateY(0);}
+    to{transform:translateY(100%);}
+  }
+  #addTimeJobStep{max-height:0; overflow:hidden; opacity:0; transition:max-height .5s ease, opacity .6s ease;}
+  #addTimeJobStep.open{max-height:240px; opacity:1;}
+  .sheet-handle{
+    width:36px; height:4px;
+    background:var(--g3);
+    border-radius:2px;
+    margin:6px auto 16px;
+  }
+  .sheet-heading{
+    font-size:19px;
+    font-weight:500;
+    color:var(--g7);
+  }
+  .sheet-sub{
+    font-size:14px;
+    color:var(--g6);
+    margin-top:6px;
+    line-height:1.4;
+  }
+  .chip-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:16px;
+  }
+  .card-quick-hint{font-size:12.5px; color:var(--g6); margin-top:10px;}
+  .chip-row.card-quick-row{margin-top:8px;}
+  .chip-row.card-quick-row.hidden{display:none;}
+  .card-quick-row .chip{padding:7px 12px; font-size:13px;}
+  .jobs-add-btn.card-add-toggle{margin-top:10px;}
+  .card-add-row{display:flex; gap:8px; margin-top:10px;}
+  .card-add-row .jobs-add-btn.card-add-toggle{margin-top:0; flex:1;}
+  .jobs-add-btn.ghost{border-style:solid; border-color:var(--g2); color:var(--g6);}
+  .chip{
+    padding:9px 16px;
+    border-radius:999px;
+    border:1.5px solid var(--g3);
+    font-size:14px;
+    font-weight:400;
+    color:var(--g7);
+    background:#fff;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .chip.selected{
+    border-color:var(--primary);
+    background:var(--primary-tint);
+    color:var(--primary);
+    font-weight:500;
+  }
+  .chip.disabled{
+    opacity:0.45;
+    cursor:not-allowed;
+    border-color:var(--g3);
+    color:var(--g5);
+  }
+  .chip.charge-option{
+    border-color:var(--g4);
+  }
+  .chip.charge-option.selected{
+    border-color:var(--primary);
+    background:var(--primary-tint);
+    color:var(--primary);
+  }
+  .sheet .chip{border-radius:14px;}
+  #addTimeJobRow{flex-wrap:nowrap;}
+  #addTimeJobRow .chip{flex:1; min-width:0; justify-content:center; flex-direction:column; padding:10px 6px; gap:5px; text-align:center;}
+  #addTimeJobRow .tl-jobnum-pill{font-size:11px;}
+  .sheet-divider{
+    height:1px;
+    background:var(--g2);
+    margin:18px 0 10px;
+  }
+  .edit-sheet .sheet-divider{
+    margin-top:42px;
+  }
+  .gap-joblink-label{margin-top:14px;}
+  .sheet-label{
+    font-size:12px;
+    font-weight:500;
+    color:var(--g6);
+    text-transform:uppercase;
+    letter-spacing:0.4px;
+  }
+
+  /* ---------- Scene 6: weekly timesheet ---------- */
+  .week-screen{
+    position:relative;
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    background:#fff;
+  }
+  .tabs{
+    display:flex;
+    border-bottom:1px solid var(--g2);
+  }
+  .tab{
+    flex:1;
+    text-align:center;
+    padding:12px 0;
+    font-size:14px;
+    font-weight:500;
+    color:var(--g6);
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+  }
+  .tab.active{color:var(--primary); border-bottom:2px solid var(--primary);}
+  .badge{
+    background:#E5484D;
+    color:#fff;
+    font-size:11px;
+    font-weight:500;
+    border-radius:999px;
+    padding:1px 7px;
+    min-width:16px;
+    text-align:center;
+  }
+  .weeknav{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px 20px;
+    font-size:14px;
+    color:var(--g7);
+    font-weight:500;
+  }
+  .weeknav span{
+    cursor:default;
+    color:var(--primary);
+    font-size:14px;
+    width:32px; height:32px;
+    border:1.5px solid var(--primary);
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+  }
+  .weeknav span:nth-child(2){
+    color:var(--g7);
+    width:auto; height:auto;
+    border:none;
+    font-size:14px;
+  }
+  .weektotal-bar{
+    background:var(--primary);
+    color:#fff;
+    display:flex;
+    justify-content:space-between;
+    padding:10px 20px;
+    font-size:14px;
+    font-weight:500;
+  }
+  .day-list{flex:1; overflow-y:auto; overflow-x:hidden;}
+  .day-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:14px 20px;
+    border-bottom:1px solid var(--g1);
+  }
+  .day-row.highlight{background:var(--charged-tint);}
+  .day-date-full{font-size:15px; font-weight:400; color:var(--g7); flex:1;}
+  .gps-tag{
+    font-size:10px;
+    font-weight:500;
+    color:var(--charged);
+    border:1px solid var(--charged);
+    border-radius:4px;
+    padding:2px 6px;
+    letter-spacing:0.3px;
+  }
+  .day-hours{font-size:15px; font-weight:500; color:var(--primary);}
+  .day-hours.emph{color:var(--charged);}
+  .day-row .chevron{color:var(--g4); font-size:16px;}
+
+  .tab-panel{display:none; flex:1; flex-direction:column;}
+  .tab-panel.active{display:flex;}
+
+  .pending-intro{
+    padding:16px 20px; background:var(--g1); border-bottom:1px solid var(--g2);
+  }
+  .pending-intro span{display:block;}
+  #pendingCountText{font-size:15px; font-weight:500; color:var(--g7);}
+  .pending-sub{font-size:13px; color:var(--g6); margin-top:2px;}
+  .pending-empty{display:none; flex:1; padding:28px; text-align:center; align-items:center; justify-content:center; flex-direction:column;}
+  .pending-empty.active{display:flex;}
+  .pending-empty-icon{width:48px; height:48px; margin:0 auto 16px; border-radius:50%; background:#E8F6F3; color:var(--charged); display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:600;}
+  .pending-empty-title{font-size:18px; font-weight:600; color:var(--g7);}
+  .pending-empty-sub{font-size:14px; line-height:1.45; color:var(--g6); margin-top:6px;}
+  .pending-empty-link{margin-top:14px; border:0; background:transparent; color:var(--primary); font:inherit; font-size:14px; font-weight:600; cursor:pointer;}
+
+  .day-row.pending{
+    justify-content:space-between;
+    overflow:hidden;
+  }
+  .day-row.pending.submitting{animation:pendingSubmitOut .8s cubic-bezier(.4,0,.2,1) forwards;}
+  @keyframes pendingSubmitOut{
+    0%{opacity:1; transform:translateX(0); max-height:96px; padding-top:14px; padding-bottom:14px; background:#fff;}
+    28%{opacity:1; transform:translateX(0); max-height:96px; padding-top:14px; padding-bottom:14px; background:var(--charged-tint);}
+    62%{opacity:0; transform:translateX(36px); max-height:96px; padding-top:14px; padding-bottom:14px; background:var(--charged-tint);}
+    100%{opacity:0; transform:translateX(36px); max-height:0; min-height:0; padding-top:0; padding-bottom:0; border-width:0; background:#fff;}
+  }
+  @media (prefers-reduced-motion: reduce){.day-row.pending.submitting{animation-duration:.01s;}}
+  .day-row-left{
+    display:flex; flex-direction:column; gap:2px; flex:1;
+  }
+  .day-source{
+    font-size:12px; color:var(--g6);
+  }
+
+  .fab{
+    position:absolute;
+    right:20px; bottom:76px;
+    width:52px; height:52px;
+    border-radius:50%;
+    background:var(--primary);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:26px;
+    line-height:1;
+    box-shadow:0 4px 12px rgba(0,0,0,0.25);
+    z-index:5;
+  }
+
+  .toast{
+    position:absolute;
+    left:50%;
+    bottom:96px;
+    transform:translateX(-50%);
+    background:var(--dark);
+    color:#fff;
+    font-size:13.5px;
+    font-weight:400;
+    padding:11px 18px;
+    border-radius:8px;
+    white-space:nowrap;
+    box-shadow:0 6px 18px rgba(0,0,0,0.25);
+    animation:toastIn .5s ease;
+    z-index:60;
+  }
+  @media (prefers-reduced-motion: reduce){ .toast{animation:none;} }
+  @keyframes toastIn{
+    from{opacity:0; transform:translate(-50%, 10px);}
+    to{opacity:1; transform:translate(-50%, 0);}
+  }
+
+  .tabbar{
+    display:flex;
+    border-top:1px solid var(--g2);
+    padding:8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
+    background:#fff;
+  }
+  .tabbar-item{
+    flex:1;
+    text-align:center;
+    font-size:10.5px;
+    color:var(--g5);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+  }
+  .tabbar-item.active{color:var(--primary);}
+  .tabbar-icon{
+    width:20px; height:20px;
+    border-radius:5px;
+    background:currentColor;
+    opacity:0.25;
+  }
+  .tabbar-item.active .tabbar-icon{opacity:0.9;}
+  .tabbar-icon.more{border-radius:50%;}
+  .tabbar-item.active .tabbar-icon.more{
+    border:1.5px solid var(--primary);
+    background:none;
+    opacity:1;
+  }
+
+  /* ---------- Controls ---------- */
+  .controls{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+    color:#ccc;
+    font-size:13px;
+    font-family:'Roboto', sans-serif;
+    transition:opacity .6s ease;
+  }
+  .controls.hidden{display:none;}
+  .controls-row{
+    display:flex;
+    gap:8px;
+    align-items:center;
+  }
+  .ctrl-btn{
+    background:#2b2f33;
+    color:#eee;
+    border:1px solid #3d4147;
+    border-radius:8px;
+    padding:8px 10px;
+    min-width:72px;
+    cursor:pointer;
+    font-family:'Roboto', sans-serif;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    line-height:1.2;
+  }
+  .ctrl-btn span:first-child{font-size:15px; font-weight:600;}
+  .ctrl-btn span:last-child{font-size:11px; font-weight:400; color:#bbb;}
+  .ctrl-btn:hover{background:#35393e;}
+  .ctrl-btn.active{background:var(--primary); border-color:var(--primary); color:#fff;}
+  .ctrl-btn.active span:last-child{color:#fff;}
+  .hint-text{color:#888; font-size:12px; text-align:center; max-width:420px;}
+  /* ---------- Concept: AI Agent ---------- */
+  .agent-view{padding:16px 16px 0;}
+  .agent-head{padding:4px 0 8px;}
+  .agent-summary{display:flex; align-items:center; flex-wrap:wrap; gap:8px; font-size:13px; color:var(--g6);}
+  .agent-summary-dot{width:4px; height:4px; border-radius:50%; background:var(--g4);}
+  .agent-stat{font-size:13px; font-weight:500; color:var(--g7);}
+  .agent-timeline{display:flex; flex-direction:column; gap:10px; padding-bottom:10px;}
+  .agent-entry{background:#fff; border-radius:14px; padding:14px 16px; box-shadow:0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04); border-left:4px solid var(--g4); display:flex; align-items:flex-start; justify-content:space-between; gap:12px;}
+  .agent-entry.job{border-left-color:var(--charged);}
+  .agent-entry.travel{border-left-color:var(--primary);}
+  .agent-entry.supplies{border-left-color:var(--job2);}
+  .agent-entry.lunch{border-left-color:var(--g5);}
+  .agent-entry-main{flex:1; min-width:0;}
+  .agent-entry-header{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:2px;}
+  .agent-entry-title{font-size:16px; font-weight:500; color:var(--g7); flex:1; min-width:0; padding-right:8px;}
+  .agent-entry-dur{font-size:16px; font-weight:400; color:var(--g7); white-space:nowrap;}
+  .agent-entry-meta{font-size:13px; color:var(--g6);}
+  .agent-note{font-size:12px; color:var(--primary); margin-top:6px;}
+  .agent-action{font-size:13px; font-weight:500; color:var(--primary); cursor:pointer; background:none; border:none; padding:8px 0 8px 8px; margin:-8px 0 -8px 0; font-family:'Roboto', sans-serif; flex-shrink:0;}
+  .agent-action:hover{text-decoration:underline;}
+
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="notch"></div>
+  <div class="screen" id="screen">
+    <div class="status-bar"></div>
+
+    <!-- SCENE 1: arrived job 1 -->
+    <section class="scene active" data-scene="1">
+      <div class="lockscreen">
+        <div class="statusbar">
+          <span>7:52</span>
+          <div class="icons">
+            <span>96%</span>
+            <div class="battery"><div class="battery-fill" style="width:96%"></div></div>
+          </div>
+        </div>
+        <div class="lock-time">7:52</div>
+        <div class="lock-date">Friday, 21 August</div>
+        <div class="notif-stack">
+          <div class="notif">
+            <div class="notif-icon">T</div>
+            <div class="notif-body">
+              <div class="notif-top"><span class="notif-app">Tradify</span><span class="notif-when">now</span></div>
+              <div class="notif-title">You're On-Site | Timer Started ⏱</div>
+              <div class="notif-desc">Sarah Chen</div>
+              <div class="notif-desc">22 Ponsonby Terrace</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCENE 2: left job 1 -->
+    <section class="scene" data-scene="2">
+      <div class="lockscreen">
+        <div class="statusbar">
+          <span>11:40</span>
+          <div class="icons">
+            <span>81%</span>
+            <div class="battery"><div class="battery-fill" style="width:81%"></div></div>
+          </div>
+        </div>
+        <div class="lock-time">11:40</div>
+        <div class="lock-date">Friday, 21 August</div>
+        <div class="notif-stack">
+          <div class="notif">
+            <div class="notif-icon">T</div>
+            <div class="notif-body">
+              <div class="notif-top"><span class="notif-app">Tradify</span><span class="notif-when">now</span></div>
+              <div class="notif-title">You're Off-Site | 3h 50m saved 👍</div>
+              <div class="notif-desc">Sarah Chen</div>
+              <div class="notif-desc">22 Ponsonby Terrace</div>
+            </div>
+          </div>
+          <div class="notif faded">
+            <div class="notif-icon">T</div>
+            <div class="notif-body">
+              <div class="notif-top"><span class="notif-app">Tradify</span><span class="notif-when">3h ago</span></div>
+              <div class="notif-title">You're On-Site | Timer Started ⏱</div>
+              <div class="notif-desc">Sarah Chen</div>
+              <div class="notif-desc">22 Ponsonby Terrace</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCENE 3: arrived job 2 -->
+    <section class="scene" data-scene="3">
+      <div class="lockscreen">
+        <div class="statusbar">
+          <span>12:35</span>
+          <div class="icons">
+            <span>72%</span>
+            <div class="battery"><div class="battery-fill" style="width:72%"></div></div>
+          </div>
+        </div>
+        <div class="lock-time">12:35</div>
+        <div class="lock-date">Friday, 21 August</div>
+        <div class="notif-stack">
+          <div class="notif">
+            <div class="notif-icon">T</div>
+            <div class="notif-body">
+              <div class="notif-top"><span class="notif-app">Tradify</span><span class="notif-when">now</span></div>
+              <div class="notif-title">You're On-Site | Timer Started ⏱</div>
+              <div class="notif-desc">Dave Smith</div>
+              <div class="notif-desc">14 Jervois Rd, Herne Bay</div>
+            </div>
+          </div>
+          <div class="notif faded">
+            <div class="notif-icon">T</div>
+            <div class="notif-body">
+              <div class="notif-top"><span class="notif-app">Tradify</span><span class="notif-when">55m ago</span></div>
+              <div class="notif-title">You're Off-Site | 3h 50m saved 👍</div>
+              <div class="notif-desc">Sarah Chen</div>
+              <div class="notif-desc">22 Ponsonby Terrace</div>
+            </div>
+          </div>
+          <div class="notif faded" style="opacity:0.28;">
+            <div class="notif-icon">T</div>
+            <div class="notif-body">
+              <div class="notif-top"><span class="notif-app">Tradify</span><span class="notif-when">4h ago</span></div>
+              <div class="notif-title">You're On-Site | Timer Started ⏱</div>
+              <div class="notif-desc">Sarah Chen</div>
+              <div class="notif-desc">22 Ponsonby Terrace</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCENE 4: end of day, tappable -->
+    <section class="scene" data-scene="4">
+      <div class="lockscreen">
+        <div class="statusbar">
+          <span>4:50</span>
+          <div class="icons">
+            <span>38%</span>
+            <div class="battery"><div class="battery-fill" style="width:38%"></div></div>
+          </div>
+        </div>
+        <div class="lock-time">4:50</div>
+        <div class="lock-date">Friday, 21 August</div>
+        <div class="notif-stack">
+          <div class="notif tappable" id="openReview">
+            <div class="notif-icon">T</div>
+            <div class="notif-body">
+              <div class="notif-top"><span class="notif-app">Tradify</span><span class="notif-when">now</span></div>
+              <div class="notif-title">Your timesheet's already done</div>
+              <div class="notif-desc">Check it's right, then get paid for 8h 05m.</div>
+            </div>
+          </div>
+          <div class="notif faded">
+            <div class="notif-icon">T</div>
+            <div class="notif-body">
+              <div class="notif-top"><span class="notif-app">Tradify</span><span class="notif-when">just now</span></div>
+              <div class="notif-title">You're Off-Site | 4h 15m saved 👍</div>
+              <div class="notif-desc">Dave Smith</div>
+              <div class="notif-desc">14 Jervois Rd, Herne Bay</div>
+            </div>
+          </div>
+          <div class="notif faded" style="opacity:0.28;">
+            <div class="notif-icon">T</div>
+            <div class="notif-body">
+              <div class="notif-top"><span class="notif-app">Tradify</span><span class="notif-when">4h ago</span></div>
+              <div class="notif-title">You're On-Site | Timer Started ⏱</div>
+              <div class="notif-desc">Dave Smith</div>
+              <div class="notif-desc">14 Jervois Rd, Herne Bay</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCENE 5: review screen -->
+    <section class="scene" data-scene="5">
+      <div class="appbar">
+        <span class="back" id="backFromReview">‹</span>
+        <div class="appbar-titles centered">
+          <div class="appbar-title" id="reviewDateTitle">Friday, 21 August</div>
+        </div>
+      </div>
+
+      <div class="review-scroll">
+        <div class="concept-view" data-concept-view="cards">
+          <div class="card-stack" id="cards-stack"></div>
+        </div>
+
+        <div class="concept-view" data-concept-view="agent" style="display:none;">
+          <div class="agent-view" id="agent-view"></div>
+        </div>
+
+        <div class="footer-space"></div>
+      </div>
+
+      <div class="sticky-footer">
+        <button class="confirm-btn" id="confirmBtn">Submit timesheet</button>
+      </div>
+
+    </section>
+
+    <!-- SCENE 6: timesheets (Pending + Week tabs) -->
+    <section class="scene" data-scene="6">
+      <div class="appbar appbar-plain">
+        <span class="back plain" id="backFromTimesheets">←</span>
+        <div class="appbar-titles centered">
+          <div class="appbar-title">Timesheets</div>
+        </div>
+      </div>
+      <div class="week-screen">
+        <div class="tabs">
+          <div class="tab active" data-tab="pending">Pending Review <span class="badge" id="pendingBadge">3</span></div>
+          <div class="tab" data-tab="week">Week</div>
+        </div>
+
+        <div class="tab-panel active" data-panel="pending">
+          <div class="day-list" id="pendingList">
+            <div class="day-row pending" data-review-day="Friday, 21 August 2026">
+              <div class="day-row-left">
+                <span class="day-date-full">Friday 21 Aug 2026</span>
+                <span class="day-source">GPS tracked · 9h 00m</span>
+              </div>
+              <span class="chevron">›</span>
+            </div>
+            <div class="day-row pending" data-review-day="Thursday, 20 August 2026">
+              <div class="day-row-left">
+                <span class="day-date-full">Thursday 20 Aug 2026</span>
+                <span class="day-source">All day · GPS tracked · 7h 30m</span>
+              </div>
+              <span class="chevron">›</span>
+            </div>
+            <div class="day-row pending" data-review-day="Wednesday, 19 August 2026">
+              <div class="day-row-left">
+                <span class="day-date-full">Wednesday 19 Aug 2026</span>
+                <span class="day-source">All day · GPS tracked · 8h 00m</span>
+              </div>
+              <span class="chevron">›</span>
+            </div>
+          </div>
+          <div class="pending-empty" id="pendingEmpty">
+            <div class="pending-empty-icon">✓</div>
+            <div class="pending-empty-title">All caught up</div>
+            <div class="pending-empty-sub">Every timesheet's submitted. Nothing pending your review.</div>
+            <button class="pending-empty-link" id="viewSubmitted">View submitted</button>
+          </div>
+        </div>
+
+        <div class="tab-panel" data-panel="week">
+          <div class="weeknav">
+            <span>←</span>
+            <span>17 – 23 Aug 2026</span>
+            <span>→</span>
+          </div>
+          <div class="weektotal-bar">
+            <span>Week Total</span>
+            <span id="weekTotalVal">00:00</span>
+          </div>
+          <div class="day-list">
+            <div class="day-row"><span class="day-date-full">Monday 17 Aug 2026</span><span class="day-hours">00:00</span><span class="chevron">›</span></div>
+            <div class="day-row"><span class="day-date-full">Tuesday 18 Aug 2026</span><span class="day-hours">00:00</span><span class="chevron">›</span></div>
+            <div class="day-row" id="weekDay19"><span class="day-date-full">Wednesday 19 Aug 2026</span><span class="day-hours" id="weekHours19">00:00</span><span class="chevron">›</span></div>
+            <div class="day-row" id="weekDay20"><span class="day-date-full">Thursday 20 Aug 2026</span><span class="day-hours" id="weekHours20">00:00</span><span class="chevron">›</span></div>
+            <div class="day-row" id="weekDay21">
+              <span class="day-date-full">Friday 21 Aug 2026</span>
+              <span class="day-hours" id="weekHours21">00:00</span>
+              <span class="chevron">›</span>
+            </div>
+            <div class="day-row"><span class="day-date-full">Saturday 22 Aug 2026</span><span class="day-hours">00:00</span><span class="chevron">›</span></div>
+            <div class="day-row"><span class="day-date-full">Sunday 23 Aug 2026</span><span class="day-hours">00:00</span><span class="chevron">›</span></div>
+          </div>
+        </div>
+
+        <div class="fab" aria-hidden="true">+</div>
+        <div class="tabbar">
+          <div class="tabbar-item"><div class="tabbar-icon"></div>Scheduler</div>
+          <div class="tabbar-item"><div class="tabbar-icon"></div>Jobs</div>
+          <div class="tabbar-item"><div class="tabbar-icon"></div>Sales</div>
+          <div class="tabbar-item"><div class="tabbar-icon"></div>Customers</div>
+          <div class="tabbar-item active"><div class="tabbar-icon more"></div>More</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Edit entry — slides up over whatever's underneath, same as the Break sheet -->
+    <div class="sheet-overlay" id="editOverlay">
+      <div class="sheet edit-sheet" id="editSheet">
+        <div class="sheet-handle"></div>
+        <div class="edit-sheet-header">
+          <div class="appbar-cancel-btn" id="editCancelBtn">Cancel</div>
+          <div class="appbar-titles centered">
+            <div class="appbar-title" id="editSceneTitle">Edit Time</div>
+          </div>
+          <div class="appbar-save-btn" id="editSaveBtn">Save</div>
+        </div>
+      <div class="edit-screen" id="editScreen">
+        <div class="edit-time-boxes">
+          <div class="edit-time-box">
+            <div class="edit-time-box-label">Start</div>
+            <div class="edit-time-box-value" id="editStartBoxValue">7:50am</div>
+          </div>
+          <div class="edit-time-box">
+            <div class="edit-time-box-label">End</div>
+            <div class="edit-time-box-value" id="editFinishBoxValue">8:45am</div>
+          </div>
+        </div>
+        <div class="edit-round-row">
+          <button class="edit-round-btn" id="editRoundBtn" data-round-time>Round to next hour</button>
+        </div>
+
+        <div class="field-list">
+          <div class="field-row" id="editTypeRow" data-toggle="editTypePicker">
+            <div class="field-row-label">Type</div>
+            <div class="field-row-value" id="editTypeValue"><span>Unknown</span><span class="chevron">›</span></div>
+          </div>
+          <div class="field-row-picker" id="editTypePicker">
+            <div class="type-grid" id="editTypeGrid">
+              <button class="type-btn" data-type="job1">Kindy Rewire</button>
+              <button class="type-btn" data-type="job2">Bathroom Reno</button>
+              <button class="type-btn" data-type="unknown">Unknown</button>
+              <button class="type-btn" data-type="lunch">Lunch</button>
+              <button class="type-btn" data-type="travel">Travel</button>
+              <button class="type-btn" data-type="parts">Supplies</button>
+              <button class="type-btn" data-type="break">Break</button>
+              <button class="type-btn" data-type="other">Another job</button>
+            </div>
+          </div>
+
+          <div class="field-row" id="editAssignRowToggle" data-toggle="editAssignPicker" style="display:none;">
+            <div class="field-row-label">Assign to</div>
+            <div class="field-row-value" id="editAssignValue"><span>Required</span><span class="chevron">›</span></div>
+          </div>
+          <div class="field-row-picker" id="editAssignPicker">
+            <div class="chip-row" id="editAssignRow">
+              <div class="chip" data-assign="job1">Kindy Rewire</div>
+              <div class="chip" data-assign="job2">Bathroom Reno</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sheet-divider"></div>
+        <div class="edit-delete-text" id="editDelete">Delete</div>
+      </div>
+      </div>
+    </div>
+
+    <div class="sheet-overlay" id="addTimeOverlay">
+      <div class="sheet" id="addTimeSheet" data-add-time-seg="">
+        <div class="sheet-handle"></div>
+        <div class="sheet-heading" id="addTimeHeading">Add a task</div>
+        <div class="chip-row" id="addTimeTypeRow">
+          <div class="chip" data-add-time-type="lunch" data-testid="lunch">Lunch</div>
+          <div class="chip" data-add-time-type="travel" data-testid="travel">Travel</div>
+          <div class="chip" data-add-time-type="parts" data-testid="parts">Supply run</div>
+        </div>
+        <div id="addTimeJobStep">
+          <div class="sheet-divider"></div>
+          <div class="sheet-label">Which job?</div>
+          <div class="chip-row" id="addTimeJobRow">
+            <div class="chip" data-add-time-job="job1">Kindy Rewire</div>
+            <div class="chip" data-add-time-job="job2">Bathroom Reno</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sheet-overlay" id="editBreakOverlay">
+      <div class="sheet" id="editBreakSheet" data-edit-break-seg="">
+        <div class="sheet-handle"></div>
+        <div class="sheet-heading" id="editBreakHeading">Break</div>
+        <div class="sheet-label">How long?</div>
+        <div class="chip-row" id="breakChips">
+          <div class="chip" data-break-dur="15">15m</div>
+          <div class="chip" data-break-dur="30">30m</div>
+          <div class="chip" data-break-dur="45">45m</div>
+          <div class="chip" data-break-dur="60">60m</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sheet-overlay" id="roundTimeOverlay">
+      <div class="sheet" id="roundTimeSheet" data-round-time-seg="">
+        <div class="sheet-handle"></div>
+        <div class="sheet-heading" id="roundTimeHeading">Round up time</div>
+        <div class="rpe-slider">
+          <div class="rpe-value" id="roundTimeValueBig"></div>
+          <div class="rpe-track" id="roundTimeTrack">
+            <div class="rpe-fill" id="roundTimeFill"></div>
+            <div class="rpe-thumb" id="roundTimeThumb"></div>
+          </div>
+          <div class="rpe-ticks" id="roundTimeTicks"></div>
+        </div>
+        <div class="edit-hint">Drag to pull from unassigned time after this job.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="controls" id="controls">
+  <div class="controls-row" id="sceneButtons">
+    <button class="ctrl-btn" data-jump="1"><span>1</span><span>Arrived job 1</span></button>
+    <button class="ctrl-btn" data-jump="2"><span>2</span><span>Left job 1</span></button>
+    <button class="ctrl-btn" data-jump="3"><span>3</span><span>Arrived job 2</span></button>
+    <button class="ctrl-btn" data-jump="4"><span>4</span><span>End of day</span></button>
+    <button class="ctrl-btn" data-jump="5"><span>5</span><span>Review</span></button>
+    <button class="ctrl-btn" data-jump="6"><span>6</span><span>Confirmed</span></button>
+    <button class="ctrl-btn" data-jump="7"><span>7</span><span>Edit entry</span></button>
+  </div>
+  <div class="controls-row">
+    <button class="ctrl-btn" id="prevBtn">← Prev</button>
+    <button class="ctrl-btn" id="nextBtn">Next →</button>
+    <button class="ctrl-btn" id="resetBtn">Reset (R)</button>
+    <button class="ctrl-btn" id="hideBtn">Hide (H)</button>
+  </div>
+  <div class="hint-text">Keyboard: ← → step · 1–6 jump to scene · 7 opens edit entry · R reset · H hide controls · Esc closes edit</div>
+</div>
+
+<script>
+(function(){
+  var TOTAL_SCENES = 6;
+  var current = 1;
+
+  var JOB1_BASE = 230; // minutes, 7:50-11:40 (default boundary, before any dragging)
+  var JOB2_BASE = 255; // minutes, 12:35-4:50 (default boundary, before any dragging)
+  var GAP_MIN = 55;
+  var TOTAL_MIN = JOB1_BASE + GAP_MIN + JOB2_BASE; // 540 = 9h00m, the whole day's fixed span (7:50am-4:50pm)
+  var DAY_START_ABS = 7 * 60 + 50; // 7:50am in minutes-since-midnight
+  var JOB_NAMES = { job1: 'Kindy Rewire', job2: 'Bathroom Reno' };
+
+
+  var state = {
+    segments: [
+      { id: 1, type: 'job1', duration: JOB1_BASE, break: 0, label: 'Kindy Rewire' },
+      { id: 2, type: 'parts', duration: GAP_MIN, jobLink: 'job2', label: 'Mitre 10' },
+      { id: 3, type: 'job2', duration: JOB2_BASE, break: 0, label: 'Bathroom Reno' }
+    ],
+    nextId: 4,
+    lastNewSegment: null,
+    lastNewBreak: null
+  };
+
+  var reviewDays = {
+    'Friday, 21 August 2026': {
+      title: 'Friday, 21 August',
+      start: 7 * 60 + 50,
+      segments: [
+        { id: 1, type: 'job1', duration: JOB1_BASE, break: 0, label: 'Kindy Rewire' },
+        { id: 2, type: 'parts', duration: GAP_MIN, jobLink: 'job2', label: 'Mitre 10' },
+        { id: 3, type: 'job2', duration: JOB2_BASE, break: 0, label: 'Bathroom Reno' }
+      ]
+    },
+    'Thursday, 20 August 2026': {
+      title: 'Thursday, 20 August',
+      start: 8 * 60,
+      segments: [
+        { id: 1, type: 'parts', duration: 30, jobLink: 'other', label: 'Bunnings' },
+        { id: 2, type: 'other', duration: 450, break: 0, label: 'Grey Lynn Villa Rewire', contact: 'Olivia Martin', jobNumber: 'JB00318', allDay: true }
+      ]
+    },
+    'Wednesday, 19 August 2026': {
+      title: 'Wednesday, 19 August',
+      start: 8 * 60,
+      segments: [
+        { id: 1, type: 'other', duration: 480, break: 0, label: 'Ponsonby Office Fit-out', contact: 'James Wilson', jobNumber: 'JB00317', allDay: true },
+        { id: 2, type: 'parts', duration: 30, jobLink: 'other', label: 'Bunnings' }
+      ]
+    }
+  };
+  var reviewBackScene = 4;
+  var currentReviewDay = 'Friday, 21 August 2026';
+  var submittedDays = {};
+
+  function openReviewDay(day, backScene){
+    var reviewDay = reviewDays[day];
+    if (!reviewDay) return;
+    DAY_START_ABS = reviewDay.start;
+    state = {
+      segments: reviewDay.segments.map(function(seg){ return Object.assign({}, seg); }),
+      nextId: reviewDay.segments.length + 1,
+      lastNewSegment: null,
+      lastNewBreak: null
+    };
+    reviewBackScene = backScene;
+    currentReviewDay = day;
+    setText('reviewDateTitle', reviewDay.title);
+    recalc(false);
+    showScene(5);
+  }
+
+  function getSegments(){ return state.segments; }
+  function getJobSegments(){ return state.segments.filter(function(s){ return s.type === 'job1' || s.type === 'job2'; }); }
+  function getGapSegments(){ return state.segments.filter(function(s){ return !(s.type === 'job1' || s.type === 'job2'); }); }
+  function getSegment(id){ return state.segments.find(function(s){ return s.id === id; }); }
+  function segmentIndex(id){ return state.segments.findIndex(function(s){ return s.id === id; }); }
+  function totalDayMinutes(){ return state.segments.reduce(function(sum, s){ return sum + s.duration; }, 0); }
+
+  // Split one entry into two adjacent entries of the same type, sitting side by
+  // side in the timeline so each half can then be dragged or tagged separately.
+  function splitSegment(seg){
+    if (!seg || seg.duration <= 10) return null;
+    var idx = segmentIndex(seg.id);
+    if (idx < 0) return null;
+    var half = Math.floor(seg.duration / 2);
+    var remainder = seg.duration - half;
+    var newSeg = { id: state.nextId++, type: seg.type, duration: remainder, jobLink: seg.jobLink, label: seg.label };
+    seg.duration = half;
+    state.segments.splice(idx + 1, 0, newSeg);
+    return newSeg;
+  }
+  function totalChargedMinutes(){
+    return state.segments.reduce(function(sum, s){
+      if (s.type === 'job1' || s.type === 'job2') return sum + Math.max(0, s.duration - (s.break || 0));
+      if (s.type === 'parts' || s.type === 'travel') return s.jobLink ? sum + s.duration : sum;
+      if (s.type === 'other') return sum + s.duration;
+      return sum;
+    }, 0);
+  }
+  function totalNotChargedMinutes(){ return totalDayMinutes() - totalChargedMinutes(); }
+
+  function clockLabel(minFromDayStart){
+    var abs = DAY_START_ABS + minFromDayStart;
+    var h24 = Math.floor(abs / 60) % 24;
+    var m = abs % 60;
+    var ampm = h24 < 12 ? 'am' : 'pm';
+    var h12 = h24 % 12; if (h12 === 0) h12 = 12;
+    return h12 + ':' + (m < 10 ? '0' + m : m) + ampm;
+  }
+
+  function fmt(mins){
+    var h = Math.floor(mins/60);
+    var m = mins % 60;
+    if (h > 0){
+      return h + 'H' + (m > 0 ? ' ' + (m < 10 ? '0'+m : m) + 'M' : '');
+    }
+    return m + 'M';
+  }
+
+  function supplierLogo(label){
+    if (!label) return '';
+    var l = label.toLowerCase();
+    if (l.indexOf('bunnings') > -1) return 'bunnings.png';
+    if (l.indexOf('mitre 10') > -1 || l.indexOf('mitre10') > -1) return 'mitre1-.png';
+    return '';
+  }
+
+  function segmentDisplayName(seg){
+    if (seg.type === 'job1' || seg.type === 'job2') return seg.label;
+    if (seg.type === 'unknown') return 'Away from jobs';
+    if (seg.type === 'lunch') return 'Lunch';
+    if (seg.type === 'travel' || seg.type === 'parts'){
+      if (seg.jobLink){
+        var linkedJob = state.segments.find(function(s){ return s.type === seg.jobLink; });
+        var linkedContact = linkedJob ? contactFor(linkedJob) : JOB_NAMES[seg.jobLink];
+        return (seg.type === 'parts' ? 'Supply run' : (seg.label || 'Travel')) + ' for ' + linkedContact;
+      }
+      return seg.label || (seg.type === 'travel' ? 'Travel' : 'Supplies');
+    }
+    if (seg.type === 'break') return 'Break';
+    if (seg.type === 'other') return seg.label || (seg.jobLink ? JOB_NAMES[seg.jobLink] : 'Job');
+    return 'Away from jobs';
+  }
+
+  function segmentTypeLabel(seg){
+    if (seg.type === 'job1' || seg.type === 'job2') return 'Job';
+    if (seg.type === 'unknown') return 'Unknown';
+    if (seg.type === 'lunch') return 'Lunch';
+    if (seg.type === 'travel') return 'Travel';
+    if (seg.type === 'parts') return 'Supplies';
+    if (seg.type === 'break') return 'Break';
+    if (seg.type === 'other') return 'Other job';
+    return 'Unknown';
+  }
+
+  function segmentRanges(){
+    var t = 0;
+    return state.segments.map(function(seg){
+      var start = t;
+      t += seg.duration;
+      return { seg: seg, start: start, end: t };
+    });
+  }
+
+  function timeRangeText(start, end){
+    return clockLabel(start) + '–' + clockLabel(end);
+  }
+
+  function jobNumberFor(seg){
+    if (seg.type === 'job1') return 'JB00320';
+    if (seg.type === 'job2') return 'JB00321';
+    if (seg.type === 'other' && seg.jobNumber) return seg.jobNumber;
+    return '';
+  }
+
+  function contactFor(seg){
+    if (seg.type === 'job1') return 'Sarah Chen';
+    if (seg.type === 'job2') return 'Dave Smith';
+    if (seg.type === 'other' && seg.contact) return seg.contact;
+    return '';
+  }
+
+  var openAddPanels = new Set(); // segment ids whose "add/split" panel is expanded
+  var addTypeChoice = {}; // unknown segments where a type has been picked and job selection is pending
+
+  // Shared "+ Add / split" affordance: job cards get it to add a break/travel/supply
+  // run alongside their work; unknown-time cards get it to split part of that time
+  // into something known while the rest stays unknown, rather than only being able
+  // to convert the whole block at once via the pills above it.
+  function addPanelHtml(seg){
+    var isJob = seg.type === 'job1' || seg.type === 'job2' || seg.type === 'other';
+    if (!isJob && seg.type !== 'unknown') return '';
+    // GPS already has the tradie logged as on-site for the whole of a job entry, so
+    // travel/supply-run don't make sense to carve off it — only a break can happen
+    // without leaving site. Unknown time is, by definition, not GPS-pinned to a job,
+    // so it keeps the full set of options.
+    if (isJob){
+      if (seg.break > 0){
+        var breakNew = state.lastNewBreak === seg.id ? ' new-break' : '';
+        return '' +
+          '<div class="break-row' + breakNew + '" data-break-row data-edit-break="' + seg.id + '">' +
+            '<span class="break-tag">Break <span class="break-dur">' + fmt(seg.break) + '</span></span>' +
+          '</div>';
+      }
+      return '<div class="break-row" data-add-break="' + seg.id + '"><span class="break-add">Add Break</span></div>';
+    }
+    // Unaccounted time: "Add a task" assigns it as lunch/travel/supplies.
+    return '' +
+      '<div class="card-add-row">' +
+        '<button class="jobs-add-btn card-add-toggle" data-add-time-open="' + seg.id + '">+ Add a task</button>' +
+      '</div>';
+  }
+
+  function renderCardsView(totalText, subText){
+    animateNum('cards-headline-num', totalText, false);
+    setText('cards-headline-sub', subText);
+    var stack = document.getElementById('cards-stack');
+    if (!stack) return;
+    var html = '';
+    var ranges = segmentRanges();
+    ranges.forEach(function(r, idx){
+      var dur = fmt(r.seg.duration - (r.seg.break || 0));
+      var range = timeRangeText(r.start, r.end);
+      var typeLabel = segmentTypeLabel(r.seg);
+      var isLinked = (r.seg.type === 'travel' || r.seg.type === 'parts') && r.seg.jobLink;
+      var isJob = r.seg.type === 'job1' || r.seg.type === 'job2' || r.seg.type === 'other' || isLinked;
+      var isWhiteCard = isJob || r.seg.type === 'lunch';
+      var jobRef = isLinked ? state.segments.find(function(s){ return s.type === r.seg.jobLink; }) : r.seg;
+      var jobNum = isLinked ? '' : (jobRef ? jobNumberFor(jobRef) : '');
+      var name = isLinked ? segmentDisplayName(r.seg) : (isJob ? contactFor(r.seg) : segmentDisplayName(r.seg));
+      var iconHtml = '';
+      var showAssignOptions = (r.seg.type === 'travel' || r.seg.type === 'parts') && !r.seg.jobLink;
+      var quickRow = '';
+      if (showAssignOptions){
+        quickRow = '<div class="card-quick-hint">Which job was this for?</div>' +
+          '<div class="chip-row card-quick-row">' +
+          '<div class="chip" data-quick-assign="job1">' + JOB_NAMES.job1 + '</div>' +
+          '<div class="chip" data-quick-assign="job2">' + JOB_NAMES.job2 + '</div>' +
+        '</div>';
+      }
+      var addRow = addPanelHtml(r.seg);
+      var newClass = state.lastNewSegment === r.seg.id ? ' new-card' : '';
+      var isGps = (r.seg.type === 'job1' || r.seg.type === 'job2' || r.seg.type === 'other' || (r.seg.type === 'parts' && r.seg.label === 'Mitre 10'));
+      var rightHtml = (r.seg.type === 'lunch') ? '' : '<span class="tl-card-dur">' + dur + '</span>';
+      var gpsPill = isGps ? '<span class="tl-gps-pill">GPS Captured</span>' : '';
+      var lunchPill = (r.seg.type === 'lunch') ? '<div class="break-row"><span class="break-tag">Lunch <span class="break-dur">' + dur + '</span></span></div>' : '';
+      var logo = (r.seg.type === 'travel' || r.seg.type === 'parts') ? supplierLogo(r.seg.label) : '';
+      var typePill = r.seg.allDay ? '<span class="tl-type-pill">All day</span>' : (logo ? '<img class="tl-supplier-logo" src="' + logo + '" alt="">' : ((r.seg.type === 'travel' || r.seg.type === 'parts') ? '<span class="tl-type-pill">' + (r.seg.type === 'travel' ? 'Travel' : 'Supplies') + '</span>' : ''));
+      if (r.seg.type === 'unknown'){
+        html += '' +
+          '<div class="tl-card notcharged jobs-gap-card add-time-bottom gap-prompt" data-add-time-open="' + r.seg.id + '">' +
+            '<div>Did you do something here?</div>' +
+            '<div class="gap-prompt-sub">' + range + '</div>' +
+          '</div>';
+      } else {
+        html += '' +
+          '<div class="tl-card' + (isWhiteCard ? '' : ' notcharged') + newClass + '" data-edit-segment="' + r.seg.id + '">' +
+            '<div class="tl-card-top"><span>' + iconHtml + name + '</span>' + rightHtml + '</div>' +
+            '<div class="tl-card-meta"><span>' + range + '</span>' + gpsPill + '</div>' +
+            '<div class="tl-card-pills">' +
+              (jobNum ? '<span class="tl-jobnum-pill">' + jobNum + '</span>' : '') +
+              typePill +
+            '</div>' +
+            quickRow +
+            addRow +
+            lunchPill +
+          '</div>';
+      }
+    });
+    // The "+ Add time" affordance at the end of the day always creates a new
+    // 15-minute gap carved off the last segment so the new task sits under the
+    // last card, rather than filling any other gap that may exist earlier.
+    html += '<div class="tl-card notcharged jobs-gap-card jobs-add-card add-time-bottom" data-add-time-open="new">Add Time</div>';
+    stack.innerHTML = html;
+    state.lastNewSegment = null;
+    state.lastNewBreak = null;
+    initCardsSortable();
+  }
+
+  function initCardsSortable(){
+    // Drag-to-reorder intentionally disabled for this prototype.
+  }
+
+  function renderJobsView(totalText, subText){
+    animateNum('jobs-headline-num', totalText, false);
+    setText('jobs-headline-sub', subText);
+    var view = document.getElementById('jobs-view');
+    if (!view) return;
+    var ranges = segmentRanges();
+    // .filter, not .find — a job can be split into more than one entry, and every
+    // one of them still needs to show up here, not just the first.
+    var job1Ranges = ranges.filter(function(r){ return r.seg.type === 'job1'; });
+    var job2Ranges = ranges.filter(function(r){ return r.seg.type === 'job2'; });
+    var assignedToJob1 = ranges.filter(function(r){ return (r.seg.type === 'travel' || r.seg.type === 'parts') && r.seg.jobLink === 'job1'; });
+    var assignedToJob2 = ranges.filter(function(r){ return (r.seg.type === 'travel' || r.seg.type === 'parts') && r.seg.jobLink === 'job2'; });
+    var middle = ranges.filter(function(r){ return r.seg.type !== 'job1' && r.seg.type !== 'job2' && !((r.seg.type === 'travel' || r.seg.type === 'parts') && r.seg.jobLink); });
+
+    function jobCardsHtml(jobRanges, assignedList){
+      return jobRanges.map(function(jr, i){
+        var isLast = i === jobRanges.length - 1;
+        var isNew = state.lastNewSegment === jr.seg.id;
+        return '' +
+          '<div class="jobs-card' + (isNew ? ' new-card' : '') + '" data-edit-segment="' + jr.seg.id + '">' +
+            '<div class="jobs-card-header"><span class="jobs-card-title">' + contactFor(jr.seg) + '</span><span class="jobs-card-dur" data-round-time="' + jr.seg.id + '">' + fmt(jr.seg.duration - (jr.seg.break || 0)) + '</span></div>' +
+            '<div class="jobs-card-meta">' + timeRangeText(jr.start, jr.end) + '</div>' +
+            '<div class="jobs-card-meta"><span class="tl-jobnum-pill">' + jobNumberFor(jr.seg) + '</span></div>' +
+            (isLast && assignedList.length ? '<div class="jobs-includes"><div class="jobs-includes-label">Includes</div><div class="jobs-include-list">' + assignedList.map(function(r){ return '<span class="jobs-include-tag' + (r.seg.id === state.lastNewSegment ? ' new-badge' : '') + '">' + fmt(r.seg.duration) + ' ' + segmentTypeLabel(r.seg).toLowerCase() + '</span>'; }).join('') + '</div></div>' : '') +
+            addPanelHtml(jr.seg) +
+          '</div>';
+      }).join('');
+    }
+
+    function otherCardHtml(seg){
+      var isNew = state.lastNewSegment === seg.id;
+      return '' +
+        '<div class="jobs-card' + (isNew ? ' new-card' : '') + '" data-edit-segment="' + seg.id + '">' +
+          '<div class="jobs-card-header"><span class="jobs-card-title">' + segmentDisplayName(seg) + '</span><span class="jobs-card-dur">' + fmt(seg.duration) + '</span></div>' +
+        '</div>';
+    }
+
+    var html = '';
+    html += jobCardsHtml(job1Ranges, assignedToJob1);
+    html += jobCardsHtml(job2Ranges, assignedToJob2);
+    var gap = state.segments.find(function(s){ return s.type === 'unknown'; });
+    if (gap){
+      html += '<div class="jobs-card jobs-gap-card jobs-add-card" data-add-time-open="' + gap.id + '">+ Add time</div>';
+    }
+    state.segments.forEach(function(seg){
+      if (seg.type === 'job1' || seg.type === 'job2' || seg.type === 'unknown') return;
+      if ((seg.type === 'travel' || seg.type === 'parts') && seg.jobLink) return;
+      html += otherCardHtml(seg);
+    });
+    view.innerHTML = html;
+    state.lastNewSegment = null;
+  }
+
+  function renderQueueView(totalText, subText){
+    var view = document.getElementById('queue-view');
+    if (!view) return;
+    var job1 = state.segments.find(function(s){ return s.type === 'job1'; });
+    var job2 = state.segments.find(function(s){ return s.type === 'job2'; });
+    var unresolved = state.segments.filter(function(s){
+      return s.type === 'unknown' || ((s.type === 'travel' || s.type === 'parts') && !s.jobLink);
+    });
+    var html = '';
+    if (unresolved.length === 0){
+      html = '<div class="queue-done">Nothing left to review</div>';
+    } else {
+      html += '<div class="queue-status">' + unresolved.length + ' to review</div>';
+      unresolved.forEach(function(seg){
+        var title = seg.type === 'unknown' ? 'Unaccounted time' : (seg.type === 'travel' ? 'Travel' : 'Supply run');
+        var sub = fmt(seg.duration) + (seg.type === 'unknown' ? ' not assigned' : ' — which job?');
+        var actions;
+        if (seg.type === 'unknown'){
+          actions = '<button class="jobs-add-btn" data-add-time-open="' + seg.id + '">+ Add time</button>';
+        } else {
+          actions = '' +
+            '<div class="chip-row card-quick-row" style="margin-top:10px;">' +
+              '<div class="chip" data-quick-assign="job1" data-edit-segment="' + seg.id + '">' + (job1 ? contactFor(job1) + '<span class="tl-jobnum-pill">' + jobNumberFor(job1) + '</span>' : 'Job 1') + '</div>' +
+              '<div class="chip" data-quick-assign="job2" data-edit-segment="' + seg.id + '">' + (job2 ? contactFor(job2) + '<span class="tl-jobnum-pill">' + jobNumberFor(job2) + '</span>' : 'Job 2') + '</div>' +
+            '</div>';
+        }
+        html += '' +
+          '<div class="queue-card" data-edit-segment="' + seg.id + '">' +
+            '<div class="queue-card-title">' + title + '</div>' +
+            '<div class="queue-card-sub">' + sub + '</div>' +
+            actions +
+          '</div>';
+      });
+    }
+    view.innerHTML = html;
+  }
+
+  function renderChecklistView(totalText, subText){
+    var view = document.getElementById('check-view');
+    if (!view) return;
+    var job1 = state.segments.find(function(s){ return s.type === 'job1'; });
+    var job2 = state.segments.find(function(s){ return s.type === 'job2'; });
+    var total = state.segments.length;
+    var confirmed = 0;
+    var html = '';
+    state.segments.forEach(function(seg){
+      var done = seg.type !== 'unknown' && !((seg.type === 'travel' || seg.type === 'parts') && !seg.jobLink);
+      if (done) confirmed++;
+      var title = seg.type === 'job1' || seg.type === 'job2' ? contactFor(seg) : segmentDisplayName(seg);
+      var sub = jobNumberFor(seg);
+      if (!sub && seg.type === 'lunch') sub = 'Unpaid';
+      if (!sub && (seg.type === 'travel' || seg.type === 'parts')) sub = 'Unlinked';
+      if (seg.type === 'unknown') sub = fmt(seg.duration) + ' unassigned';
+      else sub = fmt(seg.duration) + (sub ? ' · ' + sub : '');
+      var action = '';
+      if (seg.type === 'unknown'){
+        action = '<div class="check-action" data-add-time-open="' + seg.id + '">+ Add time</div>';
+      } else if ((seg.type === 'travel' || seg.type === 'parts') && !seg.jobLink){
+        action = '' +
+          '<div class="chip-row card-quick-row" style="margin-top:8px;">' +
+            '<div class="chip" data-quick-assign="job1" data-edit-segment="' + seg.id + '">' + (job1 ? contactFor(job1) + '<span class="tl-jobnum-pill">' + jobNumberFor(job1) + '</span>' : 'Job 1') + '</div>' +
+            '<div class="chip" data-quick-assign="job2" data-edit-segment="' + seg.id + '">' + (job2 ? contactFor(job2) + '<span class="tl-jobnum-pill">' + jobNumberFor(job2) + '</span>' : 'Job 2') + '</div>' +
+          '</div>';
+      }
+      html += '' +
+        '<div class="check-row' + (done ? ' done' : '') + '">' +
+          '<div class="check-circle"></div>' +
+          '<div class="check-body" data-edit-segment="' + seg.id + '">' +
+            '<div class="check-title">' + title + '</div>' +
+            '<div class="check-sub">' + sub + '</div>' +
+            (done ? '' : action) +
+          '</div>' +
+        '</div>';
+    });
+    html = '<div class="check-progress">' + confirmed + ' of ' + total + ' confirmed</div>' + html;
+    view.innerHTML = html;
+  }
+
+  function renderMeterView(totalText, subText){
+    var view = document.getElementById('meter-view');
+    if (!view) return;
+    var totalDay = totalDayMinutes();
+    var toCharge = totalChargedMinutes();
+    var pct = totalDay ? Math.round((toCharge / totalDay) * 100) : 0;
+    var html = '' +
+      '<div class="meter-head">' +
+        '<div class="meter-labels"><span>' + fmt(toCharge) + ' billable</span><span>' + fmt(totalDay) + ' worked</span></div>' +
+        '<div class="meter-track"><div class="meter-fill" style="width:' + pct + '%;"></div></div>' +
+      '</div>';
+    html += '<div class="meter-list">';
+    state.segments.forEach(function(seg){
+      var isCharged = (seg.type === 'job1' || seg.type === 'job2') || ((seg.type === 'travel' || seg.type === 'parts') && seg.jobLink);
+      var isUnknown = seg.type === 'unknown';
+      var tagClass = isCharged ? 'charged' : (isUnknown ? 'unknown' : 'unpaid');
+      var tagText = isCharged ? 'Billable' : (isUnknown ? 'Unassigned' : 'Unpaid');
+      var label = seg.type === 'job1' || seg.type === 'job2' ? contactFor(seg) : segmentDisplayName(seg);
+      var sub = jobNumberFor(seg);
+      if (!sub && seg.type === 'lunch') sub = 'Unpaid';
+      if (!sub && (seg.type === 'travel' || seg.type === 'parts')) sub = (seg.jobLink ? JOB_NAMES[seg.jobLink] : 'Unlinked');
+      if (seg.type === 'unknown') sub = fmt(seg.duration) + ' unassigned';
+      else sub = fmt(seg.duration) + (sub ? ' · ' + sub : '');
+      var actions = '';
+      if (isUnknown){
+        actions = '<div class="check-action" data-add-time-open="' + seg.id + '">+ Add time</div>';
+      } else if ((seg.type === 'travel' || seg.type === 'parts') && !seg.jobLink){
+        actions = '' +
+          '<div class="chip-row card-quick-row" style="margin-top:8px;">' +
+            '<div class="chip" data-quick-assign="job1" data-edit-segment="' + seg.id + '">' + (state.segments.find(function(s){ return s.type === 'job1'; }) ? contactFor(state.segments.find(function(s){ return s.type === 'job1'; })) + '<span class="tl-jobnum-pill">' + jobNumberFor(state.segments.find(function(s){ return s.type === 'job1'; })) + '</span>' : 'Job 1') + '</div>' +
+            '<div class="chip" data-quick-assign="job2" data-edit-segment="' + seg.id + '">' + (state.segments.find(function(s){ return s.type === 'job2'; }) ? contactFor(state.segments.find(function(s){ return s.type === 'job2'; })) + '<span class="tl-jobnum-pill">' + jobNumberFor(state.segments.find(function(s){ return s.type === 'job2'; })) + '</span>' : 'Job 2') + '</div>' +
+          '</div>';
+      }
+      html += '' +
+        '<div class="meter-row" data-edit-segment="' + seg.id + '">' +
+          '<div>' +
+            '<div class="meter-row-label">' + label + '</div>' +
+            '<div class="meter-row-sub">' + sub + '</div>' +
+            (actions ? actions : '') +
+          '</div>' +
+          '<div class="meter-tag ' + tagClass + '">' + tagText + '</div>' +
+        '</div>';
+    });
+    html += '</div>';
+    view.innerHTML = html;
+  }
+
+  function renderAgentView(totalText, subText){
+    var view = document.getElementById('agent-view');
+    if (!view) return;
+    var entries = [
+      { start:-20, end:0, type:'travel', title:'Drove to Sarah’s job', meta:'7.2 km · not billed to customer', billable:false, confidence:'high', reasons:[{t:'gps',l:'GPS from home'}] },
+      { start:0, end:230, type:'job', title:'Sarah Chen · Kindy Rewire', meta:'On-site · Job JB00320', billable:true, confidence:'high', reasons:[{t:'gps',l:'GPS on site'}] },
+      { start:230, end:250, type:'travel', title:'Drove to Bunnings for supplies', meta:'12 km · billed to Bathroom Reno', billable:true, confidence:'high', reasons:[{t:'gps',l:'GPS moving'}] },
+      { start:250, end:275, type:'supplies', title:'Supply run at Bunnings', meta:'Materials for Bathroom Reno · Receipt matched', billable:true, confidence:'high', reasons:[{t:'receipt',l:'Receipt photo'}] },
+      { start:275, end:305, type:'lunch', title:'Lunch at Zarbo, Grey Lynn', meta:'30 min · no job nearby', billable:false, confidence:'check', reasons:[{t:'pattern',l:'Usual lunch'}] },
+      { start:305, end:320, type:'travel', title:'Drove to Dave’s job', meta:'4.1 km · billed to Bathroom Reno', billable:true, confidence:'high', reasons:[{t:'gps',l:'GPS moving'}] },
+      { start:320, end:540, type:'job', title:'Dave Smith · Bathroom Reno', meta:'On-site · Job JB00321', billable:true, confidence:'high', reasons:[{t:'gps',l:'GPS on site'}] },
+      { start:540, end:560, type:'travel', title:'Drove home', meta:'6.5 km · not billed', billable:false, confidence:'high', reasons:[{t:'gps',l:'GPS to home'}] }
+    ];
+    var billableMins = 0;
+    var toCheck = 0;
+    entries.forEach(function(e){
+      if (e.billable) billableMins += (e.end - e.start);
+      if (e.confidence === 'check') toCheck++;
+    });
+    var total = 580;
+    var unbillable = total - billableMins;
+    var html = '' +
+      '<div class="agent-head">' +
+        '<div class="agent-summary">' +
+          '<span class="agent-stat">' + fmt(billableMins) + ' billable</span>' +
+          '<span class="agent-summary-dot"></span>' +
+          '<span class="agent-stat">' + fmt(unbillable) + ' unpaid</span>' +
+          '<span class="agent-summary-dot"></span>' +
+          '<span class="agent-stat">' + (toCheck ? toCheck + ' to check' : 'All good') + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="agent-timeline">';
+    entries.forEach(function(e, idx){
+      var note = '';
+      var notableReasons = e.reasons.filter(function(r){ return r.t !== 'gps'; });
+      if (notableReasons.length){
+        note = '<div class="agent-note">' + notableReasons.map(function(r){ return r.l; }).join(' · ') + '</div>';
+      }
+      html += '<div class="agent-entry ' + e.type + '">' +
+        '<div class="agent-entry-main">' +
+          '<div class="agent-entry-header">' +
+            '<span class="agent-entry-title">' + e.title + '</span>' +
+            '<span class="agent-entry-dur">' + fmt(e.end - e.start) + '</span>' +
+          '</div>' +
+          '<div class="agent-entry-meta">' + timeRangeText(e.start, e.end) + ' · ' + e.meta + '</div>' +
+          note +
+        '</div>' +
+        '<button class="agent-action" data-agent-edit="' + idx + '">Review</button>' +
+      '</div>';
+    });
+    html += '</div>';
+    view.innerHTML = html;
+  }
+
+  function recalc(animate){
+    var toCharge = totalChargedMinutes();
+    var totalDay = totalDayMinutes();
+    var notCharged = totalDay - toCharge;
+    var newText = fmt(toCharge);
+
+    var subText;
+    if (notCharged > 0){
+      var parts = [];
+      state.segments.forEach(function(seg){
+        if (seg.type === 'lunch') parts.push(fmt(seg.duration) + ' lunch');
+        if (seg.type === 'unknown') parts.push(fmt(seg.duration) + ' unknown');
+        if (seg.type === 'break') parts.push(fmt(seg.duration) + ' break');
+        if (seg.type === 'travel' && !seg.jobLink) parts.push(fmt(seg.duration) + ' travel');
+        if (seg.type === 'parts' && !seg.jobLink) parts.push(fmt(seg.duration) + ' supplies');
+      });
+      subText = fmt(notCharged) + ' not assigned' + (parts.length ? ': ' + parts.join(', ') : '') + '.';
+    } else {
+      subText = 'All time is assigned to jobs.';
+    }
+
+    document.getElementById('confirmBtn').textContent = 'Submit timesheet';
+
+    renderCardsView(newText, subText);
+    renderAgentView(newText, subText);
+  }
+
+  function setText(id, text){
+    var el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+  function animateNum(id, text, doAnimate){
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (doAnimate && el.textContent !== text){
+      el.textContent = text;
+      el.classList.remove('pop');
+      void el.offsetWidth;
+      el.classList.add('pop');
+    } else {
+      el.textContent = text;
+    }
+  }
+
+  function toHHMM(mins){
+    var h = Math.floor(mins/60);
+    var m = mins % 60;
+    return (h < 10 ? '0'+h : h) + ':' + (m < 10 ? '0'+m : m);
+  }
+
+  function showScene(n){
+    document.querySelectorAll('.scene').forEach(function(s){
+      s.classList.toggle('active', parseInt(s.dataset.scene,10) === n);
+    });
+    current = n;
+  }
+
+  function next(){ if (current < TOTAL_SCENES) showScene(current+1); }
+  function prev(){ if (current > 1) showScene(current-1); }
+
+  var initialPendingListHtml = document.getElementById('pendingList').innerHTML;
+
+  function resetAll(){
+    state = {
+      segments: [
+        { id: 1, type: 'job1', duration: JOB1_BASE, break: 0, label: 'Kindy Rewire' },
+        { id: 2, type: 'parts', duration: GAP_MIN, jobLink: 'job2', label: 'Mitre 10' },
+        { id: 3, type: 'job2', duration: JOB2_BASE, break: 0, label: 'Bathroom Reno' }
+      ],
+      nextId: 4
+    };
+    submittedDays = {};
+    currentReviewDay = 'Friday, 21 August 2026';
+    document.getElementById('pendingList').innerHTML = initialPendingListHtml;
+    document.getElementById('pendingList').style.display = '';
+    setText('pendingCountText', '3 days to review');
+    document.getElementById('pendingBadge').textContent = '3';
+    document.getElementById('pendingBadge').style.display = '';
+    document.querySelector('.pending-intro').style.display = '';
+    document.getElementById('pendingEmpty').classList.remove('active');
+    ['19', '20', '21'].forEach(function(day){
+      setText('weekHours' + day, '00:00');
+      var row = document.getElementById('weekDay' + day);
+      row.classList.remove('highlight');
+      var gpsTag = row.querySelector('.gps-tag');
+      if (gpsTag) gpsTag.remove();
+    });
+    setText('weekTotalVal', '00:00');
+    recalc(false);
+    showScene(1);
+  }
+
+  // ---- nav wiring ----
+  document.getElementById('openReview').addEventListener('click', function(){ openReviewDay('Friday, 21 August 2026', 4); });
+  document.getElementById('backFromReview').addEventListener('click', function(){ showScene(reviewBackScene); });
+
+  function finishTimesheetSubmission(day, minutes, row){
+    if (!submittedDays[day]) submittedDays[day] = minutes;
+    if (row) row.remove();
+
+    var remaining = document.querySelectorAll('#pendingList .day-row.pending').length;
+    setText('pendingCountText', remaining + (remaining === 1 ? ' day to review' : ' days to review'));
+    var badge = document.getElementById('pendingBadge');
+    badge.textContent = remaining;
+    badge.style.display = remaining ? '' : 'none';
+    document.querySelector('.pending-intro').style.display = remaining ? '' : 'none';
+    document.getElementById('pendingList').style.display = remaining ? '' : 'none';
+    document.getElementById('pendingEmpty').classList.toggle('active', remaining === 0);
+
+    var dayNumber = day.indexOf('19 August') > -1 ? '19' : (day.indexOf('20 August') > -1 ? '20' : '21');
+    var weekRow = document.getElementById('weekDay' + dayNumber);
+    setText('weekHours' + dayNumber, toHHMM(submittedDays[day]));
+    weekRow.classList.add('highlight');
+    if (!weekRow.querySelector('.gps-tag')){
+      var gpsTag = document.createElement('span');
+      gpsTag.className = 'gps-tag';
+      gpsTag.textContent = 'GPS';
+      weekRow.insertBefore(gpsTag, document.getElementById('weekHours' + dayNumber));
+    }
+
+    var weekTotal = Object.keys(submittedDays).reduce(function(sum, day){ return sum + submittedDays[day]; }, 0);
+    setText('weekTotalVal', toHHMM(weekTotal));
+  }
+
+  document.getElementById('confirmBtn').addEventListener('click', function(){
+    var submittedDay = currentReviewDay;
+    var submittedMinutes = totalChargedMinutes();
+    var pendingRows = Array.from(document.querySelectorAll('#pendingList .day-row.pending'));
+    var submittedRow = pendingRows.find(function(row){
+      return row.dataset.reviewDay === submittedDay;
+    });
+    var isLastRow = pendingRows.length === 1 && !!submittedRow;
+
+    showScene(6);
+    switchTimesheetTab('pending');
+    setTimeout(function(){
+      if (!submittedRow || isLastRow){
+        finishTimesheetSubmission(submittedDay, submittedMinutes, submittedRow);
+        return;
+      }
+      var finished = false;
+      function finish(){
+        if (finished) return;
+        finished = true;
+        finishTimesheetSubmission(submittedDay, submittedMinutes, submittedRow);
+      }
+      submittedRow.addEventListener('animationend', finish, { once:true });
+      submittedRow.classList.add('submitting');
+      setTimeout(finish, 1000);
+    }, 100);
+
+  });
+
+  // ---- timesheets tabs ----
+  function switchTimesheetTab(tab){
+    document.querySelectorAll('.tabs .tab').forEach(function(t){ t.classList.remove('active'); });
+    var activeTab = document.querySelector('.tabs .tab[data-tab="' + tab + '"]');
+    if (activeTab) activeTab.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+    var activePanel = document.querySelector('.tab-panel[data-panel="' + tab + '"]');
+    if (activePanel) activePanel.classList.add('active');
+  }
+
+  document.querySelectorAll('.tabs .tab').forEach(function(tab){
+    tab.addEventListener('click', function(){ switchTimesheetTab(tab.dataset.tab); });
+  });
+  document.getElementById('viewSubmitted').addEventListener('click', function(){ switchTimesheetTab('week'); });
+
+  document.getElementById('backFromTimesheets').addEventListener('click', function(){
+    showScene(4);
+  });
+
+  document.getElementById('pendingList').addEventListener('click', function(e){
+    var row = e.target.closest('.day-row.pending');
+    if (!row) return;
+    openReviewDay(row.dataset.reviewDay, 6);
+  });
+
+  // ---- edit screen ----
+  var editingId = null;
+  var editSnapshot = null; // segments as they were when Edit opened, restored on Cancel
+  var editSceneTitle = document.getElementById('editSceneTitle');
+  var editTypeGrid = document.getElementById('editTypeGrid');
+  var editAssignRow = document.getElementById('editAssignRow');
+  var editAssignRowToggle = document.getElementById('editAssignRowToggle');
+  var editTypeValue = document.getElementById('editTypeValue');
+  var editAssignValue = document.getElementById('editAssignValue');
+  var editStartBoxValue = document.getElementById('editStartBoxValue');
+  var editFinishBoxValue = document.getElementById('editFinishBoxValue');
+  var editRoundBtn = document.getElementById('editRoundBtn');
+
+  // tap a field row to open its picker underneath; only one open at a time
+  document.querySelectorAll('.field-row[data-toggle]').forEach(function(row){
+    row.addEventListener('click', function(){
+      var picker = document.getElementById(row.dataset.toggle);
+      if (!picker) return;
+      var wasOpen = picker.classList.contains('open');
+      document.querySelectorAll('.field-row-picker.open').forEach(function(p){ p.classList.remove('open'); });
+      if (!wasOpen) picker.classList.add('open');
+    });
+  });
+
+  function closeAllPickers(){
+    document.querySelectorAll('.field-row-picker.open').forEach(function(p){ p.classList.remove('open'); });
+  }
+
+  var editOverlay = document.getElementById('editOverlay');
+
+  function openEdit(segmentId){
+    var seg = getSegment(segmentId);
+    if (!seg) return;
+    editingId = segmentId;
+    editSnapshot = JSON.parse(JSON.stringify(state.segments));
+    editSceneTitle.textContent = 'Edit Time';
+    closeAllPickers();
+    renderEdit();
+    // show the type picker straight away
+    var typePicker = document.getElementById('editTypePicker');
+    if (typePicker) typePicker.classList.add('open');
+    editOverlay.classList.add('open');
+  }
+
+  function closeEdit(){
+    editOverlay.classList.remove('open');
+    editingId = null;
+  }
+
+  function renderEdit(){
+    var seg = getSegment(editingId);
+    if (!seg) return;
+    var ranges = segmentRanges();
+    var range = ranges.find(function(r){ return r.seg.id === editingId; }) || { start: 0, end: seg.duration };
+
+    // type row
+    editTypeValue.innerHTML = '<span>' + segmentDisplayName(seg) + '</span><span class="chevron">\u203a</span>';
+    editTypeGrid.querySelectorAll('.type-btn').forEach(function(btn){
+      btn.classList.toggle('selected', seg.type === btn.dataset.type);
+    });
+
+    // assign row (only for travel/supplies)
+    var needsAssign = seg.type === 'travel' || seg.type === 'parts';
+    editAssignRowToggle.style.display = needsAssign ? '' : 'none';
+    if (needsAssign){
+      var assignLabel = seg.jobLink ? JOB_NAMES[seg.jobLink] : 'Required';
+      editAssignValue.innerHTML = '<span' + (seg.jobLink ? '' : ' class="placeholder"') + '>' + assignLabel + '</span><span class="chevron">\u203a</span>';
+      editAssignRow.querySelectorAll('.chip').forEach(function(chip){
+        chip.classList.toggle('selected', chip.dataset.assign === seg.jobLink);
+      });
+    } else {
+      document.getElementById('editAssignPicker').classList.remove('open');
+    }
+
+    // start/end time — plain read-only display of this entry's current times
+    editStartBoxValue.textContent = clockLabel(range.start);
+    editFinishBoxValue.textContent = clockLabel(range.end);
+
+    // round end time up to the next clock hour
+    var absoluteEnd = DAY_START_ABS + range.end;
+    var roundedEnd = Math.ceil(absoluteEnd / 60) * 60 - DAY_START_ABS;
+    if (editRoundBtn){
+      editRoundBtn.style.display = roundedEnd === range.end ? 'none' : '';
+      editRoundBtn.textContent = 'Round time end to ' + clockLabel(roundedEnd);
+    }
+  }
+
+  // open edit from any concept card
+  ['cards-stack'].forEach(function(id){
+    var container = document.getElementById(id);
+    if (!container) return;
+    container.addEventListener('click', function(e){
+      if (e.target.closest('[data-quick-type], [data-quick-assign], [data-add-toggle], [data-carve-type], [data-add-break], [data-edit-break], [data-round-time], [data-break-delta], [data-delete-break], [data-break-row], [data-add-time], [data-add-assign], [data-add-time-open], [data-split-time]')) return;
+      var linked = e.target.closest('[data-edit-linked]');
+      if (linked){
+        var linkedId = parseInt(linked.dataset.editLinked, 10);
+        if (!isNaN(linkedId)) openEdit(linkedId);
+        return;
+      }
+      var card = e.target.closest('[data-edit-segment]');
+      if (!card) return;
+      var segId = parseInt(card.dataset.editSegment, 10);
+      if (isNaN(segId)) return;
+      openEdit(segId);
+    });
+  });
+
+  // ---- quick pills on an unresolved card: pick what unknown time was, then assign it ----
+  function handleQuickPickClick(e){
+    var typeBtn = e.target.closest('[data-quick-type]');
+    var assignBtn = e.target.closest('[data-quick-assign]');
+    if (!typeBtn && !assignBtn) return;
+    var card = e.target.closest('[data-edit-segment]');
+    if (!card) return;
+    var seg = getSegment(parseInt(card.dataset.editSegment, 10));
+    if (!seg) return;
+    if (typeBtn){
+      seg.type = typeBtn.dataset.quickType;
+      if (typeBtn.dataset.quickType !== 'travel' && typeBtn.dataset.quickType !== 'parts'){
+        seg.jobLink = null; // lunch/break don't need a job
+      }
+      // travel/supply run: keep any jobLink already set (e.g. carved off a job card below)
+    } else {
+      seg.jobLink = assignBtn.dataset.quickAssign;
+    }
+    recalc(true);
+  }
+  document.getElementById('cards-stack').addEventListener('click', handleQuickPickClick);
+
+  // ---- "+ Add break, travel or supplies" on a job card: carve a chunk of its time off in situ ----
+  function handleAddPanelClick(e){
+    var addBreakBtn = e.target.closest('[data-add-break]');
+    if (addBreakBtn){
+      var jobSeg = getSegment(parseInt(addBreakBtn.dataset.addBreak, 10));
+      if (!jobSeg) return;
+      openEditBreakSheet(jobSeg.id);
+      return;
+    }
+    var editBreak = e.target.closest('[data-edit-break]');
+    if (editBreak){
+      openEditBreakSheet(parseInt(editBreak.dataset.editBreak, 10));
+      return;
+    }
+    var roundTimeBtn = e.target.closest('[data-round-time]');
+    if (roundTimeBtn){
+      openRoundTimeSheet(parseInt(roundTimeBtn.dataset.roundTime, 10));
+      return;
+    }
+    var addTimeOpen = e.target.closest('[data-add-time-open]');
+    if (addTimeOpen){
+      var addId = addTimeOpen.dataset.addTimeOpen;
+      if (addId === 'new'){
+        openAddTimeSheet('new');
+      } else {
+        openAddTimeSheet(parseInt(addId, 10));
+      }
+      return;
+    }
+    var splitBtn = e.target.closest('[data-split-time]');
+    if (splitBtn){
+      var seg = getSegment(parseInt(splitBtn.dataset.splitTime, 10));
+      var newSeg = splitSegment(seg);
+      if (!newSeg) return;
+      state.lastNewSegment = newSeg.id;
+      recalc(true);
+      return;
+    }
+  }
+
+  var addTimeOverlay = document.getElementById('addTimeOverlay');
+  var addTimeSheet = document.getElementById('addTimeSheet');
+  var addTimeJobStep = document.getElementById('addTimeJobStep');
+
+  function resetAddTimeSheet(){
+    addTimeJobStep.classList.remove('open');
+    addTimeSheet.classList.remove('sheet-closing');
+    addTimeSheet.dataset.addTimeSeg = '';
+    addTimeSheet.dataset.pendingType = '';
+    addTimeSheet.querySelectorAll('[data-add-time-type]').forEach(function(c){ c.classList.remove('selected'); });
+  }
+
+  function closeAddTimeSheet(animate, callback){
+    callback = callback || function(){};
+    if (animate){
+      addTimeSheet.classList.add('sheet-closing');
+      setTimeout(function(){
+        addTimeOverlay.classList.remove('open');
+        resetAddTimeSheet();
+        callback();
+      }, 280);
+    } else {
+      addTimeOverlay.classList.remove('open');
+      resetAddTimeSheet();
+      callback();
+    }
+  }
+
+
+  function openAddTimeSheet(segId){
+    addTimeSheet.dataset.addTimeSeg = segId;
+    addTimeJobStep.classList.remove('open');
+    addTimeSheet.classList.remove('sheet-closing');
+    var job1 = state.segments.find(function(s){ return s.type === 'job1'; });
+    var job2 = state.segments.find(function(s){ return s.type === 'job2'; });
+    var job1Chip = addTimeSheet.querySelector('[data-add-time-job="job1"]');
+    var job2Chip = addTimeSheet.querySelector('[data-add-time-job="job2"]');
+    if (job1Chip && job1) job1Chip.innerHTML = contactFor(job1) + '<span class="tl-jobnum-pill">' + jobNumberFor(job1) + '</span>';
+    if (job2Chip && job2) job2Chip.innerHTML = contactFor(job2) + '<span class="tl-jobnum-pill">' + jobNumberFor(job2) + '</span>';
+    addTimeOverlay.classList.add('open');
+  }
+
+  function carveTimeFromUnknown(jobSeg, type, jobLink){
+    var idx = segmentIndex(jobSeg.id);
+    if (idx < 0) return;
+    var add = Math.min(15, jobSeg.duration - 5);
+    if (add < 5) return;
+    var remaining = jobSeg.duration - add;
+    jobSeg.type = type;
+    jobSeg.jobLink = jobLink;
+    jobSeg.duration = add;
+    if (remaining > 0){
+      var newUnknown = {
+        id: state.nextId++,
+        type: 'unknown',
+        duration: remaining,
+        jobLink: null
+      };
+      state.segments.splice(idx + 1, 0, newUnknown);
+    }
+    state.lastNewSegment = jobSeg.id;
+  }
+
+  function createEndGap(){
+    if (state.segments.length === 0) return null;
+    var last = state.segments[state.segments.length - 1];
+    var take = Math.min(15, last.duration - 5);
+    if (take < 5) return null;
+    last.duration -= take;
+    var newGap = {
+      id: state.nextId++,
+      type: 'unknown',
+      duration: take,
+      jobLink: null
+    };
+    state.segments.push(newGap);
+    return newGap;
+  }
+
+  addTimeSheet.addEventListener('click', function(e){
+    var typeChip = e.target.closest('[data-add-time-type]');
+    if (typeChip){
+      var segId = addTimeSheet.dataset.addTimeSeg;
+      var seg;
+      if (segId === 'new'){
+        seg = createEndGap();
+        if (!seg) { closeAddTimeSheet(); return; }
+        addTimeSheet.dataset.addTimeSeg = seg.id;
+      } else {
+        seg = getSegment(parseInt(segId, 10));
+      }
+      if (!seg) return;
+      var type = typeChip.dataset.addTimeType;
+      addTimeSheet.querySelectorAll('[data-add-time-type]').forEach(function(c){ c.classList.remove('selected'); });
+      typeChip.classList.add('selected');
+      if (type === 'lunch'){
+        seg.type = 'lunch';
+        seg.jobLink = null;
+        state.lastNewSegment = seg.id;
+        closeAddTimeSheet(true, function(){ recalc(true); });
+      } else {
+        addTimeSheet.dataset.pendingType = type;
+        addTimeJobStep.classList.add('open');
+      }
+      return;
+    }
+    var jobChip = e.target.closest('[data-add-time-job]');
+    if (jobChip){
+      var seg = getSegment(parseInt(addTimeSheet.dataset.addTimeSeg, 10));
+      var type = addTimeSheet.dataset.pendingType;
+      var jobLink = jobChip.dataset.addTimeJob;
+      if (!seg || !type) return;
+      closeAddTimeSheet(true, function(){
+        carveTimeFromUnknown(seg, type, jobLink);
+        recalc(true);
+      });
+      return;
+    }
+  });
+
+  addTimeOverlay.addEventListener('click', function(e){
+    if (e.target === addTimeOverlay) closeAddTimeSheet();
+  });
+
+  var editBreakOverlay = document.getElementById('editBreakOverlay');
+  var editBreakSheet = document.getElementById('editBreakSheet');
+
+  function closeEditBreakSheet(){
+    editBreakOverlay.classList.remove('open');
+    editBreakSheet.dataset.editBreakSeg = '';
+  }
+
+  function openEditBreakSheet(segId){
+    var seg = getSegment(segId);
+    if (!seg) return;
+    editBreakSheet.dataset.editBreakSeg = segId;
+    var max = Math.max(0, seg.duration - 5);
+    editBreakSheet.querySelectorAll('[data-break-dur]').forEach(function(chip){
+      var dur = parseInt(chip.dataset.breakDur, 10);
+      var enabled = dur <= max;
+      chip.classList.toggle('disabled', !enabled);
+      chip.classList.toggle('selected', enabled && seg.break === dur);
+    });
+    editBreakOverlay.classList.add('open');
+  }
+
+  editBreakSheet.addEventListener('click', function(e){
+    var chip = e.target.closest('[data-break-dur]');
+    if (!chip || chip.classList.contains('disabled')) return;
+    var seg = getSegment(parseInt(editBreakSheet.dataset.editBreakSeg, 10));
+    if (!seg) return;
+    seg.break = parseInt(chip.dataset.breakDur, 10);
+    state.lastNewBreak = seg.id;
+    closeEditBreakSheet();
+    recalc(true);
+  });
+
+  editBreakOverlay.addEventListener('click', function(e){
+    if (e.target === editBreakOverlay) closeEditBreakSheet();
+  });
+
+  var roundTimeOverlay = document.getElementById('roundTimeOverlay');
+  var roundTimeSheet = document.getElementById('roundTimeSheet');
+  var roundTimeValueBig = document.getElementById('roundTimeValueBig');
+  var roundTimeTrack = document.getElementById('roundTimeTrack');
+  var roundTimeFill = document.getElementById('roundTimeFill');
+  var roundTimeThumb = document.getElementById('roundTimeThumb');
+  var roundTimeTicks = document.getElementById('roundTimeTicks');
+  var roundTimeDrag = null;
+
+  function findSlackAfterJob(idx){
+    if (idx >= state.segments.length - 1) return { seg: null, slack: 0 };
+    var next = state.segments[idx + 1];
+    if (next.type === 'unknown' || next.type === 'lunch'){
+      return { seg: next, slack: next.duration };
+    }
+    return { seg: null, slack: 0 };
+  }
+
+  function closeRoundTimeSheet(){
+    roundTimeOverlay.classList.remove('open');
+    roundTimeSheet.dataset.roundTimeSeg = '';
+    roundTimeDrag = null;
+  }
+
+  function renderRoundSlider(seg){
+    if (!roundTimeTrack) return;
+    var charged = seg.duration - (seg.break || 0);
+    var idx = segmentIndex(seg.id);
+    var slack = findSlackAfterJob(idx).slack;
+    var max = charged + slack;
+    var pct = max ? Math.max(0, Math.min(100, (charged / max) * 100)) : 0;
+    roundTimeValueBig.textContent = fmt(charged);
+    roundTimeValueBig.classList.remove('pop');
+    void roundTimeValueBig.offsetWidth;
+    roundTimeValueBig.classList.add('pop');
+    roundTimeFill.style.width = pct + '%';
+    roundTimeThumb.style.left = pct + '%';
+    roundTimeTicks.innerHTML = '' +
+      '<span class="rpe-tick">' + fmt(charged) + '</span>' +
+      '<span class="rpe-tick">' + fmt(Math.round((charged + max) / 2)) + '</span>' +
+      '<span class="rpe-tick">' + fmt(max) + '</span>';
+  }
+
+  function roundTimePctFromEvent(e){
+    var rect = roundTimeTrack.getBoundingClientRect();
+    return Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  }
+
+  function openRoundTimeSheet(segId){
+    var seg = getSegment(segId);
+    if (!seg) return;
+    if (seg.type !== 'job1' && seg.type !== 'job2') return;
+    var idx = segmentIndex(segId);
+    var next = findSlackAfterJob(idx);
+    if (next.slack === 0){
+      alert('No unassigned time after this job to round up from.');
+      return;
+    }
+    roundTimeSheet.dataset.roundTimeSeg = segId;
+    roundTimeSheet.dataset.startCharged = seg.duration - (seg.break || 0);
+    renderRoundSlider(seg);
+    roundTimeOverlay.classList.add('open');
+  }
+
+  function applyRoundTimeDrag(e){
+    if (!roundTimeDrag) return;
+    var seg = getSegment(parseInt(roundTimeSheet.dataset.roundTimeSeg, 10));
+    if (!seg) return;
+    var startCharged = parseInt(roundTimeSheet.dataset.startCharged, 10) || 0;
+    var idx = segmentIndex(seg.id);
+    var next = findSlackAfterJob(idx);
+    if (!next.seg) return;
+    var pct = roundTimePctFromEvent(e);
+    var target = startCharged + pct * next.slack;
+    var stepped = Math.max(startCharged, Math.min(startCharged + next.slack, Math.round(target / 5) * 5));
+    var delta = stepped - startCharged;
+    seg.duration = seg.duration + delta;
+    next.seg.duration = next.slack - delta;
+    if (next.seg.duration < 5){
+      state.segments.splice(idx + 1, 1);
+    }
+    roundTimeSheet.dataset.startCharged = stepped;
+    renderRoundSlider(seg);
+    recalc(false);
+  }
+
+  roundTimeTrack.addEventListener('pointerdown', function(e){
+    e.preventDefault();
+    roundTimeTrack.setPointerCapture(e.pointerId);
+    roundTimeDrag = { pointerId: e.pointerId };
+    applyRoundTimeDrag(e);
+  });
+  document.addEventListener('pointermove', function(e){
+    if (!roundTimeDrag || e.pointerId !== roundTimeDrag.pointerId) return;
+    applyRoundTimeDrag(e);
+  });
+  document.addEventListener('pointerup', function(e){
+    if (!roundTimeDrag || e.pointerId !== roundTimeDrag.pointerId) return;
+    roundTimeDrag = null;
+    recalc(true);
+  });
+  document.addEventListener('pointercancel', function(e){
+    if (!roundTimeDrag || e.pointerId !== roundTimeDrag.pointerId) return;
+    roundTimeDrag = null;
+    recalc(true);
+  });
+
+  roundTimeOverlay.addEventListener('click', function(e){
+    if (e.target === roundTimeOverlay) closeRoundTimeSheet();
+  });
+
+  document.getElementById('cards-stack').addEventListener('click', handleAddPanelClick);
+
+  var cardsSortable = null;
+
+  // Cancel discards everything done since Edit was opened; Save keeps it.
+  document.getElementById('editCancelBtn').addEventListener('click', function(){
+    if (editSnapshot) state.segments = editSnapshot;
+    editSnapshot = null;
+    recalc(true);
+    closeEdit();
+  });
+  document.getElementById('editSaveBtn').addEventListener('click', function(){
+    editSnapshot = null;
+    closeEdit();
+  });
+  editRoundBtn.addEventListener('click', function(){
+    var seg = getSegment(editingId);
+    if (!seg) return;
+    var ranges = segmentRanges();
+    var range = ranges.find(function(r){ return r.seg.id === editingId; }) || { start: 0, end: seg.duration };
+    var absoluteEnd = DAY_START_ABS + range.end;
+    var roundedEnd = Math.ceil(absoluteEnd / 60) * 60 - DAY_START_ABS;
+    seg.duration += (roundedEnd - range.end);
+    renderEdit();
+    recalc(false);
+  });
+  editOverlay.addEventListener('click', function(e){
+    if (e.target === editOverlay) document.getElementById('editCancelBtn').click();
+  });
+
+  // type selection
+  editTypeGrid.querySelectorAll('.type-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var seg = getSegment(editingId);
+      if (!seg) return;
+      var type = btn.dataset.type;
+      seg.type = type;
+      if (type === 'travel' || type === 'parts'){
+        seg.jobLink = seg.jobLink || 'job2';
+      } else {
+        seg.jobLink = null;
+      }
+      if (type === 'job1' || type === 'job2'){
+        seg.label = JOB_NAMES[type];
+        seg.break = seg.break || 0;
+      }
+      recalc(true);
+      renderEdit();
+    });
+  });
+
+  // assign selection
+  editAssignRow.querySelectorAll('.chip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      var seg = getSegment(editingId);
+      if (!seg) return;
+      seg.jobLink = chip.dataset.assign;
+      recalc(true);
+      renderEdit();
+    });
+  });
+
+  // delete
+  document.getElementById('editDelete').addEventListener('click', function(){
+    var seg = getSegment(editingId);
+    if (!seg) return;
+    var idx = segmentIndex(editingId);
+    if (idx < 0) return;
+    // redistribute time to neighbors, prefer next then previous
+    var removedDur = seg.duration;
+    state.segments.splice(idx, 1);
+    if (state.segments.length === 0){
+      // shouldn't happen, but reset
+      state.segments.push({ id: state.nextId++, type: 'unknown', duration: removedDur, jobLink: null });
+    } else {
+      if (idx < state.segments.length) state.segments[idx].duration += removedDur;
+      else state.segments[state.segments.length - 1].duration += removedDur;
+    }
+    recalc(true);
+    closeEdit();
+  });
+
+  // ---- filming controls ----
+  document.querySelectorAll('#sceneButtons .ctrl-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var jump = parseInt(btn.dataset.jump, 10);
+      if (jump === 7){
+        showScene(5);
+        if (state.segments[0]) openEdit(state.segments[0].id);
+      } else {
+        showScene(jump);
+      }
+    });
+  });
+  document.getElementById('prevBtn').addEventListener('click', prev);
+  document.getElementById('nextBtn').addEventListener('click', next);
+  document.getElementById('resetBtn').addEventListener('click', resetAll);
+
+  var controlsHidden = false;
+  document.getElementById('hideBtn').addEventListener('click', function(){
+    controlsHidden = !controlsHidden;
+    document.getElementById('controls').classList.toggle('hidden', controlsHidden);
+  });
+
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowRight'){ next(); }
+    else if (e.key === 'ArrowLeft'){ prev(); }
+    else if (e.key >= '1' && e.key <= '6'){ showScene(parseInt(e.key,10)); }
+    else if (e.key === '7'){
+      showScene(5);
+      if (state.segments[0]) openEdit(state.segments[0].id);
+    }
+    else if (e.key === 'r' || e.key === 'R'){ resetAll(); }
+    else if (e.key === 'h' || e.key === 'H'){
+      controlsHidden = !controlsHidden;
+      document.getElementById('controls').classList.toggle('hidden', controlsHidden);
+    } else if (e.key === 'Escape'){
+      if (editOverlay.classList.contains('open')) document.getElementById('editCancelBtn').click();
+    }
+  });
+
+  recalc(false);
+  showScene(5);
+})();
+</script>
+
+</body>
+</html>
