@@ -1434,6 +1434,7 @@
         <div class="sheet-handle"></div>
         <div class="sheet-heading" id="addTimeHeading">Add a task</div>
         <div class="chip-row" id="addTimeTypeRow">
+          <div class="chip" data-add-time-type="job" data-testid="job">Job</div>
           <div class="chip" data-add-time-type="lunch" data-testid="lunch">Lunch</div>
           <div class="chip" data-add-time-type="travel" data-testid="travel">Travel</div>
           <div class="chip" data-add-time-type="parts" data-testid="parts">Supply run</div>
@@ -2458,7 +2459,8 @@
       var jobLink = jobChip.dataset.addTimeJob;
       if (!seg || !type) return;
       closeAddTimeSheet(true, function(){
-        carveTimeFromUnknown(seg, type, jobLink);
+        if (type === 'job') carveTimeFromUnknown(seg, jobLink, null);
+        else carveTimeFromUnknown(seg, type, jobLink);
         recalc(true);
       });
       return;
