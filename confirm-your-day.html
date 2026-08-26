@@ -2322,34 +2322,10 @@
       target.addEventListener('animationend', finish, { once:true });
       setTimeout(finish, 400);
     } else {
-      var activeSceneNumber = active ? parseInt(active.dataset.scene, 10) : 0;
-      var animateMessages = activeSceneNumber >= 1 && activeSceneNumber <= 5 && n > activeSceneNumber && n <= 5;
       document.querySelectorAll('.scene').forEach(function(s){
         s.classList.toggle('active', s === target);
         s.classList.remove('scene-entering', 'message-progress', 'review-revealing');
       });
-      if (animateMessages){
-        var notifications = Array.from(target.querySelectorAll('.notif'));
-        var incomingNotification = notifications[0];
-        var notificationGap = 10;
-        var notificationShift = incomingNotification ? incomingNotification.getBoundingClientRect().height + notificationGap : 0;
-        notifications.forEach(function(notification, index){
-          notification.classList.add(index === 0 ? 'message-new' : 'message-age-' + index);
-        });
-        var incomingGroup = incomingNotification ? incomingNotification.closest('.job-group') : null;
-        var enteringMarker = incomingGroup ? incomingGroup.querySelector('.job-group-marker') : null;
-        if (enteringMarker) enteringMarker.classList.add('marker-entering');
-        target.style.setProperty('--notif-shift', notificationShift + 'px');
-        target.classList.add('message-progress');
-        setTimeout(function(){
-          target.classList.remove('message-progress');
-          target.style.removeProperty('--notif-shift');
-          notifications.forEach(function(notification){
-            notification.classList.remove('message-new', 'message-age-1', 'message-age-2', 'message-age-3', 'message-age-4');
-          });
-          if (enteringMarker) enteringMarker.classList.remove('marker-entering');
-        }, 600);
-      }
     }
     current = n;
   }
