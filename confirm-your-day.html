@@ -89,9 +89,17 @@
     z-index:2;
     animation:sceneSlideIn .28s ease-out both;
   }
+  .scene.scene-exiting-up{
+    z-index:2;
+    animation:sceneRevealUp .48s cubic-bezier(.4,0,.15,1) both;
+  }
   @keyframes sceneSlideIn{
     from{transform:translateX(100%);}
     to{transform:translateX(0);}
+  }
+  @keyframes sceneRevealUp{
+    from{transform:translateY(0);}
+    to{transform:translateY(-100%);}
   }
   @media (prefers-reduced-motion: reduce){
     .scene{transition:none;}
@@ -1565,7 +1573,7 @@
   var currentReviewDay = 'Friday, 21 August 2026';
   var submittedDays = {};
 
-  function openReviewDay(day, backScene){
+  function openReviewDay(day, backScene, transition){
     var reviewDay = reviewDays[day];
     if (!reviewDay) return;
     DAY_START_ABS = reviewDay.start;
@@ -1579,7 +1587,7 @@
     currentReviewDay = day;
     setText('reviewDateTitle', reviewDay.title);
     recalc(false);
-    showScene(5);
+    showScene(5, transition);
   }
 
   function getSegments(){ return state.segments; }
@@ -2080,7 +2088,18 @@
     var target = document.querySelector('.scene[data-scene="' + n + '"]');
     var active = document.querySelector('.scene.active');
     if (!target) return;
-    if (animate && active && active !== target){
+    if (animate === 'reveal-up' && active && active !== target){
+      var revealFinished = false;
+      function finishReveal(){
+        if (revealFinished) return;
+        revealFinished = true;
+        active.classList.remove('active', 'scene-exiting-up');
+      }
+      target.classList.add('active');
+      active.classList.add('scene-exiting-up');
+      active.addEventListener('animationend', finishReveal, { once:true });
+      setTimeout(finishReveal, 600);
+    } else if (animate && active && active !== target){
       var finished = false;
       function finish(){
         if (finished) return;
@@ -2143,7 +2162,7 @@
   }
 
   // ---- nav wiring ----
-  document.getElementById('openReview').addEventListener('click', function(){ openReviewDay('Friday, 21 August 2026', 4); });
+  document.getElementById('openReview').addEventListener('click', function(){ openReviewDay('Friday, 21 August 2026', 4, 'reveal-up'); });
   document.getElementById('backFromReview').addEventListener('click', function(){ showScene(reviewBackScene); });
 
   function finishTimesheetSubmission(day, minutes, row){
