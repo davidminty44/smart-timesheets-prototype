@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tradify - Timesheets</title>
+    <link rel="icon" href="http://localhost:8080/images/cropped-Tradify-favicon-32x32.png" sizes="32x32" />
+    <link href="http://localhost:8080/Styles/bootstrap.css" rel="stylesheet">
+    <link href="http://localhost:8080/Styles/index.css" rel="stylesheet">
+    <link href="http://localhost:8080/Styles/angular-toastr.css" rel="stylesheet">
+    <link href="http://localhost:8080/Fonts/font-awesome/font-awesome.min.css" rel="stylesheet">
+    <style>
+        html { display: block !important; }
+        body { margin: 0; background-color: #eee; font-family: 'Noto Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+        #sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 200px; z-index: 150; }
+        #sidebar #sidebar-inner-container { height: 100vh; background-color: #263238; color: rgba(163,175,183,.9); }
+        #wrap { margin-left: 200px; min-height: 100vh; display: flex; flex-direction: column; }
+        .app-main { flex: 1; overflow: auto; padding: 20px; }
+        .app-breadcrumb { background: transparent; padding: 0 0 10px; font-size: 13px; margin: 0; list-style: none; color: #3d4951; }
+        .app-breadcrumb > li { display: inline-block; }
+        .app-breadcrumb > li.active { color: #3d4951 !important; }
+        .app-breadcrumb > li + li:before { content: '\f105'; font-family: FontAwesome; padding: 0 10px; color: #3d4951; }
+        .sidebar-header { background-color: #263238; }
+        .avatar-button { display: flex; align-items: center; width: 100%; padding: 15px 10px; border: 0; background: transparent; color: rgba(163,175,183,.9); }
+        .company-initials { display: inline-flex; width: 38px; height: 38px; border-radius: 50%; background-color: #ff8b00; color: #fff; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; }
+        .sidebar-avatar-name { color: #97a3aa; font-size: 13px; text-align: left; padding: 0 8px; }
+        .sidebar-avatar-option { color: rgba(163,175,183,.9); font-size: 10px; }
+        #sidebar #sidebar-inner-container ul.components { padding: 0; }
+        #sidebar #sidebar-inner-container ul li.site-menu-item > a { display: flex; align-items: center; padding: 10px 15px; color: rgba(163,175,183,.9); text-decoration: none; }
+        #sidebar #sidebar-inner-container ul li.site-menu-item > a:hover { color: #fff; background: #21292e; }
+        #sidebar #sidebar-inner-container ul li.site-menu-item.active > a { color: #fff; background: #21292e; }
+        #sidebar #sidebar-inner-container ul li.site-menu-item > a i { margin-right: 10px; width: 16px; text-align: center; color: rgba(163,175,183,.9); }
+        #sidebar #sidebar-inner-container ul li.site-menu-item > a:hover i,
+        #sidebar #sidebar-inner-container ul li.site-menu-item.active > a i { color: #fff; }
+        #sidebar #sidebar-inner-container ul li.divider { height: 1px; margin: 6px 12px; background: #526069; border: 0; }
+        .add-new-task-button { margin-left: auto; width: 24px; height: 24px; border-radius: 50%; background: #00a6ca; color: #fff; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 24px; }
+        #sidebar #sidebar-inner-container .add-new-task-button i { margin: 0 !important; width: auto; color: #fff !important; font-size: 15px; line-height: 1; }
+        #sidebar #sidebar-inner-container .add-new-task-button .fa:before { color: #fff !important; }
+        .options-menu { min-width: 180px; }
+        #timesheets { padding-bottom: 0; }
+        #timesheets .timesheet-container { padding-bottom: 18px; }
+        #timesheets .title { margin-bottom: 18px; }
+        #timesheets .summary { border: 1px solid #dde2e5; border-radius: 7px 7px 0 0; margin-bottom: 0; overflow-x: auto; }
+        #timesheets .summary .header,
+        #timesheets .summary .cells { display: flex; min-width: 1020px; }
+        #timesheets .summary .cell { flex: 0 0 9% !important; width: 9%; padding: 9px 8px; box-sizing: border-box; color: #6d7377; border-bottom: 1px solid #dde2e5; }
+        #timesheets .summary .cell:first-child { flex-basis: 15% !important; width: 15%; }
+        #timesheets .summary .cell:last-child,
+        #timesheets .summary .cell:nth-last-child(2) { flex-basis: 11% !important; width: 11%; }
+        #timesheets .summary .cells .cell { min-height: 50px; display: flex; align-items: center; cursor: default; }
+        #timesheets .summary .cells .cell.clickable { cursor: pointer; color: #009ec7; }
+        #timesheets .summary .cells .cell.clickable:hover { background-color: rgba(0,158,199,.05); }
+        .pending-day-pill, .confirmed-day-total { color: #00a6ca; font-size: 15px; font-weight: 400; }
+        #timesheets .summary .cells .cell:nth-last-child(2) > span,
+        #timesheets .summary .cells .cell:last-child { color: #00a6ca; }
+        .week-total-cell { display: flex; align-items: flex-start !important; justify-content: center; flex-direction: column; }
+        .week-pending-total { color: #9a742e; font-size: 10px; font-weight: 600; }
+        .avatar-placeholder { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; margin-right: 8px; border-radius: 50%; background: #49a5cc; color: #fff; }
+        .day-section { margin-bottom: 10px; min-width: 1020px; }
+        .date-title { height: 29px; padding: 6px 9px; background: #f1f4f5; color: #707679; font-size: 12px; cursor: pointer; }
+        .timesheet-timeline { position: relative; height: 50px; margin: 0; overflow: visible; background: #fff !important; background-image: none !important; border-bottom: 1px solid #edf0f1; }
+        .timesheet-timeline.empty-timeline { height: 18px; }
+        .hours-timeline { display: flex; width: 100%; height: 25px; overflow: hidden; background: #fff; }
+        .hours-timeline .hour { flex: 0 0 4.1667%; width: 4.1667% !important; padding: 5px 2px 0; color: #7d8386; font-size: 10px; white-space: nowrap; }
+        .timesheet-timeline .timesheet { position: absolute; top: 4px; height: 42px; min-width: 72px; margin: 0; padding: 6px 8px; overflow: hidden; border: 0 !important; border-radius: 3px; background: #eb6b67 !important; color: #fff; cursor: pointer; z-index: 2; }
+        .timesheet-timeline .timesheet .content { color: #fff; font-size: 10px; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .timesheet-timeline .timesheet .time { color: #fff; display: block; }
+        .timesheet-timeline .timesheet .timesheet-caption { overflow: hidden; text-overflow: ellipsis; }
+        .timesheet-timeline .timesheet:not(.pending-block) { background: #eb6b67 !important; border: 0 !important; }
+        .timesheet-timeline .timesheet.confirming-block { animation: confirmed-block-reveal .28s cubic-bezier(.34,1.56,.64,1) .08s both; }
+        @keyframes confirmed-block-reveal {
+            0% { opacity: .7; filter: saturate(.7); box-shadow: inset 0 0 0 2px #c95752; }
+            100% { opacity: 1; filter: saturate(1); box-shadow: inset 0 0 0 0 transparent; }
+        }
+        @media (prefers-reduced-motion: reduce) { .timesheet-timeline .timesheet.confirming-block { animation: none; } }
+        .timesheet-timeline .timesheet.pending-block { overflow: visible; background: rgba(237,133,128,.7) !important; border: 2px dashed #c95752 !important; }
+        .timesheet-timeline .timesheet.pending-block .content { overflow: hidden; color: #fff; font-weight: 600; text-shadow: 0 1px 2px rgba(91,31,28,.75); }
+        .timesheet-timeline .timesheet.pending-block .time { color: #fff; }
+        .pending-indicator { position: absolute; top: -9px; right: 3px; max-width: calc(100% - 6px); padding: 1px 5px; overflow: hidden; border-radius: 8px; background: #c95752; color: #fff; font-size: 8px; font-weight: 600; line-height: 14px; text-overflow: ellipsis; text-shadow: none; text-transform: uppercase; white-space: nowrap; pointer-events: none; }
+        .timesheet-review-overlay { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(0,0,0,.5); }
+        .timesheet-review-dialog { width: min(680px, 94vw); margin: 0; }
+        .timesheet-review-dialog .modal-content { position: relative; min-height: 330px; padding: 28px; border: 0; border-radius: 4px; background: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.3); }
+        .timesheet-review-dialog .container { width: auto; padding: 0; background: #fff; }
+        .timesheet-review-dialog .modal-title { display: inline-block; color: #000; font-size: 20px; font-weight: 400; }
+        .timesheet-review-dialog .modal-body { max-height: calc(90vh - 150px); margin: 0 0 55px; padding: 25px 0 0; overflow-y: auto; }
+        .review-subtitle { display: block; margin: 0 0 20px; color: #000; font-size: 16px; font-weight: 400; }
+        .review-entry { display: flex; align-items: center; gap: 18px; min-height: 70px; padding: 14px 0; border-bottom: 1px solid rgb(228,234,236); }
+        .review-entry:first-child { border-top: 1px solid rgb(228,234,236); }
+        .review-entry .entry-details { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+        .review-entry .entry-details strong, .review-entry .entry-time strong { color: #555; font-size: 14px; font-weight: 400; letter-spacing: .5px; }
+        .review-entry .entry-details span { overflow: hidden; color: rgb(122,133,143); font-size: 12px; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
+        .review-entry .entry-time { min-width: 120px; }
+        .review-entry .entry-time strong, .review-entry .entry-time span { display: block; }
+        .review-entry .entry-time span { color: rgb(122,133,143); font-size: 12px; font-weight: 400; }
+        .timesheet-review-dialog .modal-footer { position: absolute; bottom: 0; left: 0; width: 100%; margin: 0; padding: 10px 20px; border-top: 1px solid rgb(228,234,236); background: #fff; }
+        .timesheet-review-dialog .modal-footer .btn-save { float: right; padding: 8px 40px; }
+        @media (max-width: 600px) {
+            .review-entry { align-items: flex-start; flex-wrap: wrap; gap: 8px 12px; }
+            .review-entry .entry-details { flex-basis: calc(100% - 110px); }
+            .review-entry .entry-time { min-width: 98px; }
+        }
+        @media (max-width: 767px) {
+            #sidebar { width: 60px; }
+            #wrap { margin-left: 60px; }
+            .sidebar-avatar-name, .site-menu-title, .sidebar-logo-container { display: none !important; }
+            #sidebar #sidebar-inner-container ul li.site-menu-item > a { display: block; text-align: center; padding: 10px; }
+            #sidebar #sidebar-inner-container ul li.site-menu-item > a i { display: block; margin: 0; font-size: 1.6em; }
+            .add-new-task-button { margin: 0; }
+            .app-main { padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav id="sidebar">
+    <div id="sidebar-inner-container">
+        <div class="sidebar-header">
+            <button type="button" class="avatar-button">
+                <span class="sidebar-avatar-logo"><span class="company-initials">DF</span></span>
+                <span class="sidebar-avatar-name"><span>Fandango Plumbing</span></span>
+                <span class="sidebar-avatar-option-container">
+                    <i class="fa fa-chevron-down sidebar-avatar-option" aria-hidden="true"></i>
+                </span>
+            </button>
+        </div>
+
+        <div class="side-menu-list">
+            <ul class="list-unstyled components">
+                <li class="site-menu-item" id="to-do-item">
+                    <a>
+                        <i class="site-menu-icon fa fa-list" aria-hidden="true"></i>
+                        <span class="site-menu-title">To-Do List</span>
+                        <span class="add-new-task-button"><i class="fa fa-plus" aria-hidden="true"></i></span>
+                    </a>
+                </li>
+                <li class="divider sidebar-divider" role="presentation"></li>
+                <li class="site-menu-item">
+                    <a>
+                        <i class="site-menu-icon fa fa-th-large" aria-hidden="true"></i>
+                        <span class="site-menu-title">Dashboard</span>
+                    </a>
+                </li>
+                <li class="site-menu-item">
+                    <a>
+                        <i class="site-menu-icon fa fa-tags" aria-hidden="true"></i>
+                        <span class="site-menu-title">Enquiries</span>
+                    </a>
+                </li>
+                <li class="site-menu-item">
+                    <a>
+                        <i class="site-menu-icon fa fa-briefcase" aria-hidden="true"></i>
+                        <span class="site-menu-title">Jobs</span>
+                    </a>
+                </li>
+                <li class="site-menu-item">
+                    <a>
+                        <i class="site-menu-icon fa fa-list-alt" aria-hidden="true"></i>
+                        <span class="site-menu-title">Forms</span>
+                    </a>
+                </li>
+                <li class="site-menu-item">
+                    <a>
+                        <i class="site-menu-icon fa fa-map-marker" aria-hidden="true"></i>
+                        <span class="site-menu-title">Map</span>
+                    </a>
+                </li>
+                <li class="site-menu-item">
+                    <a>
+                        <i class="site-menu-icon fa fa-file-text-o" aria-hidden="true"></i>
+                        <span class="site-menu-title">Invoices</span>
+                    </a>
+                </li>
+                <li class="site-menu-item">
+                    <a>
+                        <i class="site-menu-icon fa fa-calculator" aria-hidden="true"></i>
+                        <span class="site-menu-title">Quotes</span>
+                    </a>
+                </li>
+                <li class="site-menu-item">
+                    <a>
+                        <i class="site-menu-icon fa fa-shopping-cart" aria-hidden="true"></i>
+                        <span class="site-menu-title">Purchases</span>
+                    </a>
+                </li>
+                <li class="site-menu-item">
+                    <a>
+                        <i class="site-menu-icon fa fa-calendar" aria-hidden="true"></i>
+                        <span class="site-menu-title">Scheduler</span>
+                    </a>
+                </li>
+                <li class="site-menu-item active">
+                    <a>
+                        <i class="site-menu-icon fa fa-clock-o" aria-hidden="true"></i>
+                        <span class="site-menu-title">Timesheets</span>
+                    </a>
+                </li>
+                <li class="divider" role="presentation"></li>
+                <li class="site-menu-item">
+                    <a>
+                        <i class="site-menu-icon fa fa-desktop" aria-hidden="true"></i>
+                        <span class="site-menu-title">Website</span>
+                    </a>
+                </li>
+                <li class="site-menu-item">
+                    <a>
+                        <i class="site-menu-icon fa fa-users" aria-hidden="true"></i>
+                        <span class="site-menu-title">Customers</span>
+                    </a>
+                </li>
+                <li class="site-menu-item">
+                    <a>
+                        <i class="site-menu-icon fa fa-user" aria-hidden="true"></i>
+                        <span class="site-menu-title">Staff</span>
+                    </a>
+                </li>
+                <li class="site-menu-item">
+                    <a>
+                        <i class="site-menu-icon fa fa-truck" aria-hidden="true"></i>
+                        <span class="site-menu-title">Suppliers</span>
+                    </a>
+                </li>
+                <li class="site-menu-item">
+                    <a>
+                        <i class="site-menu-icon fa fa-plug" aria-hidden="true"></i>
+                        <span class="site-menu-title">Connections</span>
+                    </a>
+                </li>
+                <li class="site-menu-item">
+                    <a>
+                        <i class="site-menu-icon fa fa-pie-chart" aria-hidden="true"></i>
+                        <span class="site-menu-title">Reports</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="sidebar-logo-container">
+                <div class="sidebar-logo-inner-container">
+                    <img class="sidebar-logo" src="http://localhost:8080/images/Tradify-logo-gray.png" alt="Tradify" title="Tradify" />
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div id="wrap">
+    <div class="app-main">
+        <ol class="app-breadcrumb">
+            <li><i class="fa fa-home" aria-hidden="true"></i></li>
+            <li class="active">Timesheets</li>
+        </ol>
+
+        <div class="top-buttons-container row">
+            <div class="left">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-black btn-xl-menu">New Timesheet Entry</button>
+                </div>
+            </div>
+            <div class="right">
+                <div class="btn-group no-box-shadow" role="group" id="options-group">
+                    <button type="button" class="btn btn-default dropdown-toggle btn-xl-menu options" id="options-btn" aria-haspopup="true" aria-expanded="false">
+                        Options
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-right options-menu" id="options-menu">
+                        <li role="presentation"><a>Export Timesheets</a></li>
+                        <li role="presentation"><a>Export Timesheet Summary</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div id="timesheets">
+            <div class="timesheet-container">
+                <div class="title">17 – 23 August 2026</div>
+                <div class="summary">
+                    <div class="header" id="summary-header"></div>
+                    <div class="staff-member">
+                        <div class="cells" id="staff-row"></div>
+                    </div>
+                </div>
+                <div id="day-sections"></div>
+
+                <section class="timesheet-review-overlay" id="review-section" style="display:none" role="dialog" aria-modal="true" aria-labelledby="review-title">
+                    <div class="modal-dialog timesheet-review-dialog">
+                        <div class="modal-content">
+                            <div class="container inverted">
+                                <span class="modal-title" id="review-title"></span>
+                                <div class="modal-body">
+                                    <p class="review-subtitle" id="review-subtitle">Alex Johnson · GPS auto-captured</p>
+                                    <div id="review-entries"></div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn-tradify btn btn-save" id="confirm-all-btn">Confirm all</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="toast-container" class="toast-top-right" style="display:none" role="status" aria-live="polite">
+    <div class="toast toast-success">
+        <div class="toast-message"><i class="fa fa-check-circle" aria-hidden="true"></i> Timesheets confirmed</div>
+    </div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    function parseTimeToMinutes(timeStr) {
+        var normalized = String(timeStr).replace(/[\s]/g, '').toLowerCase();
+        var match = normalized.match(/^(\d{1,2}):(\d{2})(am|pm)$/);
+        if (!match) return 0;
+        var h = parseInt(match[1], 10);
+        var m = parseInt(match[2], 10);
+        var suffix = match[3];
+        if (suffix === 'am' && h === 12) h = 0;
+        if (suffix === 'pm' && h !== 12) h += 12;
+        return h * 60 + m;
+    }
+
+    function createEntry(id, customerName, jobName, jobNumber, startTime, endTime, durationMinutes, supplyRun) {
+        var startMinutes = parseTimeToMinutes(startTime);
+        var endMinutes = parseTimeToMinutes(endTime);
+        return {
+            id: id,
+            customerName: customerName,
+            jobName: jobName,
+            jobNumber: jobNumber,
+            startTime: startTime,
+            endTime: endTime,
+            startMinutes: startMinutes,
+            endMinutes: endMinutes,
+            durationMinutes: durationMinutes,
+            supplyRun: !!supplyRun,
+            confirmed: false
+        };
+    }
+
+    var days = [
+        { id: 'mon-17', dayCaption: 'Mon', dateCaption: '17 Aug', entries: [
+            createEntry('mon-job', 'James Wilson', 'Ponsonby Office Fit-out', 'JB00317', '8:00am', '4:00pm', 480),
+            createEntry('mon-supply', 'Bunnings supply run', 'Ponsonby Office Fit-out', 'JB00317', '4:00pm', '4:30pm', 30, true)
+        ]},
+        { id: 'tue-18', dayCaption: 'Tue', dateCaption: '18 Aug', entries: [
+            createEntry('tue-job', 'Olivia Martin', 'Grey Lynn Villa Rewire', 'JB00318', '8:00am', '3:30pm', 450),
+            createEntry('tue-supply', 'Bunnings supply run', 'Grey Lynn Villa Rewire', 'JB00318', '3:30pm', '4:00pm', 30, true)
+        ]},
+        { id: 'wed-19', dayCaption: 'Wed', dateCaption: '19 Aug', entries: [
+            createEntry('wed-job-one', 'Sarah Chen', 'Kindy Rewire', 'JB00320', '7:50am', '11:40am', 230),
+            createEntry('wed-supply', 'Mitre 10 supply run', 'Bathroom Reno', 'JB00321', '11:40am', '12:35pm', 55, true),
+            createEntry('wed-job-two', 'Dave Smith', 'Bathroom Reno', 'JB00321', '12:35pm', '4:50pm', 255)
+        ]},
+        { id: 'thu-20', dayCaption: 'Thu', dateCaption: '20 Aug', entries: [] },
+        { id: 'fri-21', dayCaption: 'Fri', dateCaption: '21 Aug', entries: [] },
+        { id: 'sat-22', dayCaption: 'Sat', dateCaption: '22 Aug', entries: [] },
+        { id: 'sun-23', dayCaption: 'Sun', dateCaption: '23 Aug', entries: [] }
+    ];
+
+    var selectedDay = null;
+    var minutesInDay = 24 * 60;
+
+    function formatDuration(minutes) {
+        if (minutes === 0) return '\u2013';
+        var h = Math.floor(minutes / 60);
+        var m = minutes % 60;
+        if (h === 0) return m + 'm';
+        return m === 0 ? h + 'h' : h + 'h ' + m + 'm';
+    }
+
+    function formatTableHours(minutes) {
+        return Math.floor(minutes / 60) + ':' + ('0' + (minutes % 60)).slice(-2);
+    }
+
+    function dayTotal(day) { return day.entries.reduce(function (s, e) { return s + e.durationMinutes; }, 0); }
+    function dayPending(day) { return day.entries.reduce(function (s, e) { return s + (e.confirmed ? 0 : e.durationMinutes); }, 0); }
+    function weekTotal() { return days.reduce(function (s, d) { return s + dayTotal(d); }, 0); }
+    function pendingTotal() { return days.reduce(function (s, d) { return s + dayPending(d); }, 0); }
+
+    function esc(str) {
+        var el = document.createElement('span');
+        el.textContent = str;
+        return el.innerHTML;
+    }
+
+    function percentForMinutes(minutes) {
+        return (minutes / minutesInDay) * 100;
+    }
+
+    /* --- Rendering ------------------------------------------------- */
+
+    function render() {
+        renderSummaryHeader();
+        renderStaffRow();
+        renderDaySections();
+        renderReview();
+    }
+
+    function renderSummaryHeader() {
+        var html = '<div class="cell bold">Staff</div>';
+        days.forEach(function (d) {
+            html += '<div class="cell">' + esc(d.dayCaption) + '</div>';
+        });
+        html += '<div class="cell bold">Week Total</div>';
+        html += '<div class="cell bold">Billable Total</div>';
+        document.getElementById('summary-header').innerHTML = html;
+    }
+
+    function renderStaffRow() {
+        var total = weekTotal();
+        var html = '<div class="cell"><span class="avatar-placeholder">AJ</span></div>';
+        days.forEach(function (d) {
+            var cls = 'cell';
+            var value = '';
+            if (d.entries.length > 0) {
+                cls += ' clickable';
+                value = dayPending(d) > 0
+                    ? '<span class="pending-day-pill">' + esc(formatTableHours(dayTotal(d))) + '</span>'
+                    : '<span class="confirmed-day-total">' + esc(formatTableHours(dayTotal(d))) + '</span>';
+            }
+            html += '<div class="' + cls + '" data-day="' + d.id + '">' + value + '</div>';
+        });
+        html += '<div class="cell bold week-total-cell"><span>' + esc(formatTableHours(total)) + '</span></div>';
+        html += '<div class="cell bold">' + esc(formatTableHours(total)) + '</div>';
+        document.getElementById('staff-row').innerHTML = html;
+
+        var cells = document.getElementById('staff-row').querySelectorAll('[data-day]');
+        for (var i = 0; i < cells.length; i++) {
+            cells[i].addEventListener('click', onDayClick);
+        }
+    }
+
+    function renderDaySections() {
+        var container = document.getElementById('day-sections');
+        var html = '';
+        days.forEach(function (d) {
+            html += '<div class="timesheets day-section" data-day="' + d.id + '">';
+            html += '  <div class="date-title">' + esc(d.dayCaption + ' ' + d.dateCaption) + '</div>';
+
+            var lanes = buildLanes(d.entries);
+            if (lanes.length === 0) {
+                html += '<div class="timesheet-timeline empty-timeline"></div>';
+            } else {
+                lanes.forEach(function (lane) {
+                    html += '<div class="timesheet-timeline">';
+                    lane.forEach(function (entry) {
+                        html += renderBlock(entry, d.id);
+                    });
+                    html += '</div>';
+                });
+            }
+
+            html += '  <div class="hours-timeline">';
+            for (var h = 0; h < 24; h++) {
+                var suffix = h < 12 ? 'am' : 'pm';
+                var labelHour = h === 0 ? 12 : (h <= 12 ? h : h - 12);
+                html += '<div class="hour" style="width:4.166%">' + labelHour + suffix + '</div>';
+            }
+            html += '  </div>';
+            html += '</div>';
+        });
+        container.innerHTML = html;
+
+        var sections = container.querySelectorAll('.day-section');
+        for (var i = 0; i < sections.length; i++) {
+            sections[i].addEventListener('click', onDaySectionClick);
+        }
+
+        var blocks = container.querySelectorAll('[data-entry-block]');
+        for (var j = 0; j < blocks.length; j++) {
+            blocks[j].addEventListener('click', onBlockClick);
+        }
+    }
+
+    function buildLanes(entries) {
+        var nonSupply = [];
+        var supply = [];
+        entries.forEach(function (e) {
+            if (e.supplyRun) supply.push(e); else nonSupply.push(e);
+        });
+        var lanes = [];
+        if (nonSupply.length) lanes.push(nonSupply);
+        if (supply.length) lanes.push(supply);
+        return lanes;
+    }
+
+    function renderBlock(entry, dayId) {
+        var left = percentForMinutes(entry.startMinutes);
+        var width = percentForMinutes(entry.endMinutes - entry.startMinutes);
+        var pendingClass = entry.confirmed ? '' : ' pending-block';
+        var confirmingClass = entry.justConfirmed ? ' confirming-block' : '';
+        var pendingBadge = entry.confirmed ? '' : '<span class="pending-indicator">Pending</span>';
+        var displayName = entry.supplyRun ? entry.customerName : entry.customerName;
+        var captionTwo = entry.jobNumber;
+
+        return '<div class="timesheet non-duration clickable-timesheet' + pendingClass + confirmingClass + '"' +
+               ' data-day="' + dayId + '" data-entry-block="' + entry.id + '"' +
+               (entry.confirmed ? '' : ' title="Pending review — auto-captured"') +
+               ' style="left:' + left.toFixed(2) + '%;width:' + width.toFixed(2) + '%;' + (entry.justConfirmed ? 'animation-delay:' + (.08 + (entry.confirmationDelay || 0) / 1000) + 's;' : '') + '">' +
+               pendingBadge +
+               '<div class="content">' +
+               '  <span class="time">' + esc(entry.startTime) + ' - ' + esc(entry.endTime) + '</span>' +
+               '  <div class="timesheet-caption">' +
+               '    <span>' + esc(displayName) + '</span>' +
+               '    <span> - ' + esc(captionTwo) + '</span>' +
+               '  </div>' +
+               '</div>' +
+               '</div>';
+    }
+
+    function renderReview() {
+        var section = document.getElementById('review-section');
+        if (!selectedDay) {
+            section.style.display = 'none';
+            return;
+        }
+        section.style.display = 'flex';
+
+        var dayNames = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday' };
+        var pendingEntries = selectedDay.entries.filter(function (entry) { return !entry.confirmed; }).length;
+        document.getElementById('review-title').textContent = dayNames[selectedDay.dayCaption] + ' ' + selectedDay.dateCaption.replace('Aug', 'August');
+
+        var confirmAllButton = document.getElementById('confirm-all-btn');
+        confirmAllButton.disabled = pendingEntries === 0;
+        confirmAllButton.textContent = pendingEntries > 0 ? 'Confirm all' : 'All confirmed';
+
+        var html = '';
+        selectedDay.entries.forEach(function (entry) {
+            html += '<div class="review-entry">';
+            html += '  <div class="entry-details">';
+            html += '    <strong>' + esc(entry.customerName) + '</strong>';
+            html += '    <span>' + esc(entry.jobName) + ' \u00b7 ' + esc(entry.jobNumber) + '</span>';
+            html += '  </div>';
+            html += '  <div class="entry-time">';
+            html += '    <strong>' + esc(entry.startTime) + '\u2013' + esc(entry.endTime) + '</strong>';
+            html += '    <span>' + esc(formatDuration(entry.durationMinutes)) + '</span>';
+            html += '  </div>';
+            html += '</div>';
+        });
+        document.getElementById('review-entries').innerHTML = html;
+    }
+
+    /* --- Event handlers -------------------------------------------- */
+
+    function selectDayById(dayId) {
+        for (var i = 0; i < days.length; i++) {
+            if (days[i].id === dayId && days[i].entries.length > 0) {
+                selectedDay = days[i];
+                renderReview();
+                return;
+            }
+        }
+    }
+
+    function onDayClick(e) {
+        var dayId = e.currentTarget.getAttribute('data-day');
+        selectDayById(dayId);
+    }
+
+    function onDaySectionClick(e) {
+        var section = e.currentTarget;
+        var dayId = section.getAttribute('data-day');
+        if (dayId && days.filter(function (d) { return d.id === dayId && d.entries.length > 0; }).length) {
+            selectDayById(dayId);
+        }
+    }
+
+    function onBlockClick(e) {
+        e.stopPropagation();
+        var dayId = e.currentTarget.getAttribute('data-day');
+        selectDayById(dayId);
+    }
+
+    function revealConfirmedEntries(confirmedEntries) {
+        for (var i = 0; i < confirmedEntries.length; i++) {
+            confirmedEntries[i].confirmed = true;
+            confirmedEntries[i].justConfirmed = true;
+            confirmedEntries[i].confirmationDelay = i * 30;
+        }
+        selectedDay = null;
+        render();
+        window.setTimeout(showSuccessToast, 180);
+        window.setTimeout(function () {
+            for (var j = 0; j < confirmedEntries.length; j++) {
+                confirmedEntries[j].justConfirmed = false;
+                confirmedEntries[j].confirmationDelay = 0;
+            }
+        }, 700);
+    }
+
+    function showSuccessToast() {
+        var toast = document.getElementById('toast-container');
+        toast.style.display = 'block';
+        window.setTimeout(function () { toast.style.display = 'none'; }, 2500);
+    }
+
+    function closeReviewModal() {
+        selectedDay = null;
+        renderReview();
+    }
+
+    document.getElementById('review-section').addEventListener('click', function (e) {
+        if (e.target === e.currentTarget) closeReviewModal();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && selectedDay) closeReviewModal();
+    });
+
+    document.getElementById('confirm-all-btn').addEventListener('click', function () {
+        if (!selectedDay) return;
+        revealConfirmedEntries(selectedDay.entries);
+    });
+
+    /* Options dropdown */
+    var optionsBtn = document.getElementById('options-btn');
+    var optionsGroup = document.getElementById('options-group');
+    optionsBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        optionsGroup.classList.toggle('open');
+        optionsBtn.setAttribute('aria-expanded', optionsGroup.classList.contains('open') ? 'true' : 'false');
+    });
+
+    document.addEventListener('click', function () {
+        if (optionsGroup.classList.contains('open')) {
+            optionsGroup.classList.remove('open');
+            optionsBtn.setAttribute('aria-expanded', 'false');
+        }
+    });
+
+    /* Initial render */
+    render();
+})();
+</script>
+</body>
+</html>
