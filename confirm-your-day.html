@@ -171,11 +171,11 @@
     flex:1;
     justify-content:flex-start;
   }
-  .scene.message-progress .notif:first-child{animation:notifArrive .5s cubic-bezier(.2,.8,.2,1) both;}
-  .scene.message-progress .notif:nth-child(2){animation:notifPushDownFade1 .5s cubic-bezier(.2,.8,.2,1) both;}
-  .scene.message-progress .notif:nth-child(3){animation:notifPushDownFade2 .5s cubic-bezier(.2,.8,.2,1) both;}
-  .scene.message-progress .notif:nth-child(4){animation:notifPushDownFade3 .5s cubic-bezier(.2,.8,.2,1) both;}
-  .scene.message-progress .notif:nth-child(5){animation:notifPushDownFade4 .5s cubic-bezier(.2,.8,.2,1) both;}
+  .scene.message-progress .notif.message-new{animation:notifArrive .5s cubic-bezier(.2,.8,.2,1) both;}
+  .scene.message-progress .notif.message-age-1{animation:notifPushDownFade1 .5s cubic-bezier(.2,.8,.2,1) both;}
+  .scene.message-progress .notif.message-age-2{animation:notifPushDownFade2 .5s cubic-bezier(.2,.8,.2,1) both;}
+  .scene.message-progress .notif.message-age-3{animation:notifPushDownFade3 .5s cubic-bezier(.2,.8,.2,1) both;}
+  .scene.message-progress .notif.message-age-4{animation:notifPushDownFade4 .5s cubic-bezier(.2,.8,.2,1) both;}
   @keyframes notifArrive{
     from{opacity:1; transform:translateY(calc(-1 * var(--notif-shift))) scale(.98);}
     to{opacity:1; transform:translateY(0) scale(1);}
@@ -195,6 +195,71 @@
   @keyframes notifPushDownFade4{
     from{opacity:.18; transform:translateY(calc(-1 * var(--notif-shift)));}
     to{opacity:.12; transform:translateY(0);}
+  }
+  .notif-stack.grouped{padding-left:58px;}
+  .job-group{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .job-group-marker{
+    position:absolute;
+    left:-42px;
+    top:5px;
+    bottom:5px;
+    width:34px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .job-group-marker::before{
+    content:'';
+    position:absolute;
+    left:27px;
+    top:0;
+    bottom:0;
+    width:2px;
+    border-radius:2px;
+    background:#58c7e8;
+    transform-origin:top;
+  }
+  .job-group-marker::after{
+    content:'';
+    position:absolute;
+    left:27px;
+    top:0;
+    width:7px;
+    height:calc(100% - 2px);
+    border-top:2px solid #58c7e8;
+    border-bottom:2px solid #58c7e8;
+    transform-origin:top;
+  }
+  .job-group-label{
+    position:relative;
+    z-index:1;
+    padding:7px 5px;
+    border-radius:6px;
+    background:rgba(88,199,232,.2);
+    color:#d8f5ff;
+    font-family:'Roboto', sans-serif;
+    font-size:10px;
+    font-weight:500;
+    line-height:1;
+    white-space:nowrap;
+    writing-mode:vertical-rl;
+    transform:rotate(180deg);
+  }
+  .job-group-marker.marker-entering::before,
+  .job-group-marker.marker-entering::after{animation:groupLineIn .28s ease-out both;}
+  .job-group-marker.marker-entering .job-group-label{animation:groupLabelMask .3s ease-out .24s both;}
+  @keyframes groupLineIn{
+    from{transform:scaleY(0);}
+    to{transform:scaleY(1);}
+  }
+  @keyframes groupLabelMask{
+    from{opacity:0; clip-path:inset(0 0 100% 0);}
+    to{opacity:1; clip-path:inset(0 0 0 0);}
   }
   .notif{
     background:rgba(255,255,255,0.16);
@@ -2196,6 +2261,38 @@
     return (h < 10 ? '0'+h : h) + ':' + (m < 10 ? '0'+m : m);
   }
 
+  function groupLockNotifications(){
+    document.querySelectorAll('.lockscreen .notif-stack').forEach(function(stack){
+      var notifications = Array.from(stack.children).filter(function(child){ return child.classList.contains('notif'); });
+      notifications.forEach(function(notification){
+        if (notification.textContent.indexOf('Sarah Chen') > -1) notification.dataset.jobPeriod = 'morning';
+        else if (notification.textContent.indexOf('Dave Smith') > -1) notification.dataset.jobPeriod = 'afternoon';
+      });
+      var index = 0;
+      while (index < notifications.length){
+        var period = notifications[index].dataset.jobPeriod;
+        if (!period){ index += 1; continue; }
+        var grouped = [];
+        while (index < notifications.length && notifications[index].dataset.jobPeriod === period){
+          grouped.push(notifications[index]);
+          index += 1;
+        }
+        var group = document.createElement('div');
+        group.className = 'job-group';
+        group.dataset.jobPeriod = period;
+        stack.insertBefore(group, grouped[0]);
+        grouped.forEach(function(notification){ group.appendChild(notification); });
+        if (grouped.length >= 2){
+          var marker = document.createElement('div');
+          marker.className = 'job-group-marker';
+          marker.innerHTML = '<span class="job-group-label">' + (period === 'morning' ? 'Morning Job' : 'Afternoon Job') + '</span>';
+          group.appendChild(marker);
+        }
+      }
+      stack.classList.add('grouped');
+    });
+  }
+
   function showScene(n, animate){
     var target = document.querySelector('.scene[data-scene="' + n + '"]');
     var active = document.querySelector('.scene.active');
@@ -2231,14 +2328,25 @@
         s.classList.remove('scene-entering', 'message-progress', 'review-revealing');
       });
       if (animateMessages){
-        var incomingNotification = target.querySelector('.notif:first-child');
+        var notifications = Array.from(target.querySelectorAll('.notif'));
+        var incomingNotification = notifications[0];
         var notificationGap = 10;
         var notificationShift = incomingNotification ? incomingNotification.getBoundingClientRect().height + notificationGap : 0;
+        notifications.forEach(function(notification, index){
+          notification.classList.add(index === 0 ? 'message-new' : 'message-age-' + index);
+        });
+        var incomingGroup = incomingNotification ? incomingNotification.closest('.job-group') : null;
+        var enteringMarker = incomingGroup ? incomingGroup.querySelector('.job-group-marker') : null;
+        if (enteringMarker) enteringMarker.classList.add('marker-entering');
         target.style.setProperty('--notif-shift', notificationShift + 'px');
         target.classList.add('message-progress');
         setTimeout(function(){
           target.classList.remove('message-progress');
           target.style.removeProperty('--notif-shift');
+          notifications.forEach(function(notification){
+            notification.classList.remove('message-new', 'message-age-1', 'message-age-2', 'message-age-3', 'message-age-4');
+          });
+          if (enteringMarker) enteringMarker.classList.remove('marker-entering');
         }, 600);
       }
     }
@@ -2903,6 +3011,7 @@
     }
   });
 
+  groupLockNotifications();
   recalc(false);
   showScene(6);
 })();
