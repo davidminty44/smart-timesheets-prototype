@@ -85,6 +85,14 @@
     pointer-events:auto;
     z-index:1;
   }
+  .scene.scene-entering{
+    z-index:2;
+    animation:sceneSlideIn .28s ease-out both;
+  }
+  @keyframes sceneSlideIn{
+    from{transform:translateX(100%);}
+    to{transform:translateX(0);}
+  }
   @media (prefers-reduced-motion: reduce){
     .scene{transition:none;}
   }
@@ -2053,10 +2061,27 @@
     return (h < 10 ? '0'+h : h) + ':' + (m < 10 ? '0'+m : m);
   }
 
-  function showScene(n){
-    document.querySelectorAll('.scene').forEach(function(s){
-      s.classList.toggle('active', parseInt(s.dataset.scene,10) === n);
-    });
+  function showScene(n, animate){
+    var target = document.querySelector('.scene[data-scene="' + n + '"]');
+    var active = document.querySelector('.scene.active');
+    if (!target) return;
+    if (animate && active && active !== target){
+      var finished = false;
+      function finish(){
+        if (finished) return;
+        finished = true;
+        active.classList.remove('active');
+        target.classList.remove('scene-entering');
+      }
+      target.classList.add('active', 'scene-entering');
+      target.addEventListener('animationend', finish, { once:true });
+      setTimeout(finish, 400);
+    } else {
+      document.querySelectorAll('.scene').forEach(function(s){
+        s.classList.toggle('active', s === target);
+        s.classList.remove('scene-entering');
+      });
+    }
     current = n;
   }
 
@@ -2137,7 +2162,7 @@
     });
     var isLastRow = pendingRows.length === 1 && !!submittedRow;
 
-    showScene(6);
+    showScene(6, true);
     switchTimesheetTab('pending');
     setTimeout(function(){
       if (!submittedRow || isLastRow){
