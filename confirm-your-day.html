@@ -361,7 +361,7 @@
   .appbar-subtitle{font-size:12.5px; font-weight:400; opacity:0.9; margin-top:1px;}
 
   /* ---------- Review screen ---------- */
-  .scene[data-scene="6"]{background:var(--g1);}
+  .scene[data-scene="7"]{background:var(--g1);}
   .review-stage{
     position:relative;
     width:100%;
@@ -1256,17 +1256,36 @@
       </div>
     </section>
 
-    <!-- SCENE 2: arrived job 1 -->
+    <!-- SCENE 2: supply run captured -->
     <section class="scene" data-scene="2">
       <div class="lockscreen">
+        <div class="lock-time">8:20</div>
+        <div class="lock-date">Friday, 21 August</div>
+        <div class="notif-stack">
+          <div class="notif">
+            <div class="notif-icon">T</div>
+            <div class="notif-body">
+              <div class="notif-top"><span class="notif-app">Tradify</span><span class="notif-when">now</span></div>
+              <div class="notif-title">Supply Run | 30m captured</div>
+              <div class="notif-desc">Mitre 10</div>
+              <div class="notif-desc">For Sarah Chen · JB00320</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCENE 3: arrived job 1 -->
+    <section class="scene" data-scene="3">
+      <div class="lockscreen">
         <div class="statusbar">
-          <span>7:52</span>
+          <span>8:20</span>
           <div class="icons">
             <span>96%</span>
             <div class="battery"><div class="battery-fill" style="width:96%"></div></div>
           </div>
         </div>
-        <div class="lock-time">7:52</div>
+        <div class="lock-time">8:20</div>
         <div class="lock-date">Friday, 21 August</div>
         <div class="notif-stack">
           <div class="notif">
@@ -1282,17 +1301,17 @@
       </div>
     </section>
 
-    <!-- SCENE 3: left job 1 -->
-    <section class="scene" data-scene="3">
+    <!-- SCENE 4: left job 1 -->
+    <section class="scene" data-scene="4">
       <div class="lockscreen">
         <div class="statusbar">
-          <span>11:40</span>
+          <span>12:10</span>
           <div class="icons">
             <span>81%</span>
             <div class="battery"><div class="battery-fill" style="width:81%"></div></div>
           </div>
         </div>
-        <div class="lock-time">11:40</div>
+        <div class="lock-time">12:10</div>
         <div class="lock-date">Friday, 21 August</div>
         <div class="notif-stack">
           <div class="notif">
@@ -1317,8 +1336,8 @@
       </div>
     </section>
 
-    <!-- SCENE 4: arrived job 2 -->
-    <section class="scene" data-scene="4">
+    <!-- SCENE 5: arrived job 2 -->
+    <section class="scene" data-scene="5">
       <div class="lockscreen">
         <div class="statusbar">
           <span>12:35</span>
@@ -1361,8 +1380,8 @@
       </div>
     </section>
 
-    <!-- SCENE 5: left job 2, tappable -->
-    <section class="scene" data-scene="5">
+    <!-- SCENE 6: left job 2, tappable -->
+    <section class="scene" data-scene="6">
       <div class="lockscreen">
         <div class="statusbar">
           <span>4:50</span>
@@ -1414,8 +1433,8 @@
       </div>
     </section>
 
-    <!-- SCENE 6: review screen -->
-    <section class="scene" data-scene="6">
+    <!-- SCENE 7: review screen -->
+    <section class="scene" data-scene="7">
       <div class="review-stage">
       <div class="appbar">
         <span class="back" id="backFromReview">‹</span>
@@ -1443,8 +1462,8 @@
 
     </section>
 
-    <!-- SCENE 7: timesheets (Pending + Week tabs) -->
-    <section class="scene" data-scene="7">
+    <!-- SCENE 8: timesheets (Pending + Week tabs) -->
+    <section class="scene" data-scene="8">
       <div class="appbar appbar-plain">
         <span class="back plain" id="backFromTimesheets">←</span>
         <div class="appbar-titles centered">
@@ -1643,7 +1662,7 @@
 
 <script>
 (function(){
-  var TOTAL_SCENES = 7;
+  var TOTAL_SCENES = 8;
   var current = 1;
 
   var JOB1_BASE = 230; // minutes, 7:50-11:40 (default boundary, before any dragging)
@@ -1694,7 +1713,7 @@
       ]
     }
   };
-  var reviewBackScene = 5;
+  var reviewBackScene = 6;
   var currentReviewDay = 'Friday, 21 August 2026';
   var submittedDays = {};
 
@@ -1712,7 +1731,7 @@
     currentReviewDay = day;
     setText('reviewDateTitle', reviewDay.title);
     recalc(false);
-    showScene(6, transition);
+    showScene(7, transition);
   }
 
   function getSegments(){ return state.segments; }
@@ -2209,10 +2228,25 @@
     return (h < 10 ? '0'+h : h) + ':' + (m < 10 ? '0'+m : m);
   }
 
+  function carrySupplyRunNotification(){
+    var supplyNotification = document.querySelector('.scene[data-scene="2"] .notif');
+    if (!supplyNotification) return;
+    [3, 4, 5, 6].forEach(function(sceneNumber, index){
+      var stack = document.querySelector('.scene[data-scene="' + sceneNumber + '"] .notif-stack');
+      if (!stack) return;
+      var carried = supplyNotification.cloneNode(true);
+      carried.classList.add('faded');
+      carried.style.opacity = [0.45, 0.28, 0.18, 0.12][index];
+      carried.querySelector('.notif-when').textContent = ['just now', '3h 50m ago', '4h 15m ago', '8h 30m ago'][index];
+      stack.appendChild(carried);
+    });
+  }
+
   function groupLockNotifications(){
     document.querySelectorAll('.lockscreen .notif-stack').forEach(function(stack){
       var notifications = Array.from(stack.children).filter(function(child){ return child.classList.contains('notif'); });
       notifications.forEach(function(notification){
+        if (notification.textContent.indexOf('Supply Run') > -1) return;
         if (notification.textContent.indexOf('Sarah Chen') > -1) notification.dataset.jobPeriod = 'morning';
         else if (notification.textContent.indexOf('Dave Smith') > -1) notification.dataset.jobPeriod = 'afternoon';
       });
@@ -2279,7 +2313,7 @@
   }
 
   function next(){
-    if (current === 5) openReviewDay('Friday, 21 August 2026', 5, 'reveal-up');
+    if (current === 6) openReviewDay('Friday, 21 August 2026', 6, 'reveal-up');
     else if (current < TOTAL_SCENES) showScene(current+1);
   }
   function prev(){ if (current > 1) showScene(current-1); }
@@ -2318,7 +2352,7 @@
   }
 
   // ---- nav wiring ----
-  document.getElementById('openReview').addEventListener('click', function(){ openReviewDay('Friday, 21 August 2026', 5, 'reveal-up'); });
+  document.getElementById('openReview').addEventListener('click', function(){ openReviewDay('Friday, 21 August 2026', 6, 'reveal-up'); });
   document.getElementById('backFromReview').addEventListener('click', function(){ showScene(reviewBackScene); });
 
   function finishTimesheetSubmission(day, minutes, row){
@@ -2358,7 +2392,7 @@
     });
     var isLastRow = pendingRows.length === 1 && !!submittedRow;
 
-    showScene(7, true);
+    showScene(8, true);
     switchTimesheetTab('pending');
     setTimeout(function(){
       if (!submittedRow || isLastRow){
@@ -2400,7 +2434,7 @@
   document.getElementById('pendingList').addEventListener('click', function(e){
     var row = e.target.closest('.day-row.pending');
     if (!row) return;
-    openReviewDay(row.dataset.reviewDay, 7);
+    openReviewDay(row.dataset.reviewDay, 8);
   });
 
   // ---- edit screen ----
@@ -2936,9 +2970,10 @@
     }
   });
 
+  carrySupplyRunNotification();
   groupLockNotifications();
   recalc(false);
-  showScene(6);
+  showScene(7);
 })();
 </script>
 
