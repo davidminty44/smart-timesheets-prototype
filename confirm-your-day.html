@@ -1623,8 +1623,6 @@
 (function(){
   var TOTAL_SCENES = 7;
   var current = 1;
-  var lockSequenceTimer = null;
-  var lockSequencePlaying = false;
 
   var JOB1_BASE = 230; // minutes, 7:50-11:40 (default boundary, before any dragging)
   var JOB2_BASE = 255; // minutes, 12:35-4:50 (default boundary, before any dragging)
@@ -2238,32 +2236,11 @@
     current = n;
   }
 
-  function playLockSequence(){
-    if (lockSequencePlaying) return;
-    lockSequencePlaying = true;
-    function step(){
-      if (current >= 5){
-        lockSequencePlaying = false;
-        lockSequenceTimer = null;
-        return;
-      }
-      showScene(current + 1);
-      lockSequenceTimer = setTimeout(step, 560);
-    }
-    step();
-  }
-
   function next(){
-    if (current >= 1 && current < 5) playLockSequence();
-    else if (current === 5) openReviewDay('Friday, 21 August 2026', 5, 'reveal-up');
+    if (current === 5) openReviewDay('Friday, 21 August 2026', 5, 'reveal-up');
     else if (current < TOTAL_SCENES) showScene(current+1);
   }
-  function prev(){
-    if (lockSequenceTimer) clearTimeout(lockSequenceTimer);
-    lockSequenceTimer = null;
-    lockSequencePlaying = false;
-    if (current > 1) showScene(current-1);
-  }
+  function prev(){ if (current > 1) showScene(current-1); }
 
   var initialPendingListHtml = document.getElementById('pendingList').innerHTML;
 
