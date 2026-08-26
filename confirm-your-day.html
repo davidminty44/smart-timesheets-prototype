@@ -161,6 +161,21 @@
     flex:1;
     justify-content:flex-start;
   }
+  .scene.message-progress .lock-time{animation:lockTimeChange .4s ease-out both;}
+  .scene.message-progress .notif:first-child{animation:notifArrive .5s cubic-bezier(.2,.8,.2,1) both;}
+  .scene.message-progress .notif:not(:first-child){animation:notifPushDown .5s cubic-bezier(.2,.8,.2,1) both;}
+  @keyframes lockTimeChange{
+    from{opacity:.25; transform:translateY(-5px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  @keyframes notifArrive{
+    from{opacity:0; transform:translateY(-18px) scale(.98);}
+    to{opacity:1; transform:translateY(0) scale(1);}
+  }
+  @keyframes notifPushDown{
+    from{transform:translateY(-84px);}
+    to{transform:translateY(0);}
+  }
   .notif{
     background:rgba(255,255,255,0.16);
     backdrop-filter:blur(20px);
@@ -2077,10 +2092,16 @@
       target.addEventListener('animationend', finish, { once:true });
       setTimeout(finish, 400);
     } else {
+      var activeSceneNumber = active ? parseInt(active.dataset.scene, 10) : 0;
+      var animateMessages = activeSceneNumber >= 1 && activeSceneNumber <= 4 && n > activeSceneNumber && n <= 4;
       document.querySelectorAll('.scene').forEach(function(s){
         s.classList.toggle('active', s === target);
-        s.classList.remove('scene-entering');
+        s.classList.remove('scene-entering', 'message-progress');
       });
+      if (animateMessages){
+        target.classList.add('message-progress');
+        setTimeout(function(){ target.classList.remove('message-progress'); }, 600);
+      }
     }
     current = n;
   }
