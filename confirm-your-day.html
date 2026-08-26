@@ -1714,7 +1714,7 @@
       var isJob = r.seg.type === 'job1' || r.seg.type === 'job2' || r.seg.type === 'other' || isLinked;
       var isWhiteCard = isJob || r.seg.type === 'lunch';
       var jobRef = isLinked ? state.segments.find(function(s){ return s.type === r.seg.jobLink; }) : r.seg;
-      var jobNum = isLinked ? '' : (jobRef ? jobNumberFor(jobRef) : '');
+      var jobNum = jobRef ? jobNumberFor(jobRef) : '';
       var name = isLinked ? segmentDisplayName(r.seg) : (isJob ? contactFor(r.seg) : segmentDisplayName(r.seg));
       var iconHtml = '';
       var showAssignOptions = (r.seg.type === 'travel' || r.seg.type === 'parts') && !r.seg.jobLink;
