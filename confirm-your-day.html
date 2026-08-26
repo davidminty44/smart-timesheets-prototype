@@ -2246,14 +2246,10 @@
   }
 
   function next(){
-    if (current === 1) showScene(3);
-    else if (current === 5) openReviewDay('Friday, 21 August 2026', 5, 'reveal-up');
+    if (current === 5) openReviewDay('Friday, 21 August 2026', 5, 'reveal-up');
     else if (current < TOTAL_SCENES) showScene(current+1);
   }
-  function prev(){
-    if (current === 3) showScene(1);
-    else if (current > 1) showScene(current-1);
-  }
+  function prev(){ if (current > 1) showScene(current-1); }
 
   var initialPendingListHtml = document.getElementById('pendingList').innerHTML;
 
