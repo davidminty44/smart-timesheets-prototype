@@ -352,7 +352,7 @@
   .appbar-subtitle{font-size:12.5px; font-weight:400; opacity:0.9; margin-top:1px;}
 
   /* ---------- Review screen ---------- */
-  .scene[data-scene="6"]{background:var(--g1);}
+  .scene[data-scene="5"]{background:var(--g1);}
   .review-stage{
     position:relative;
     width:100%;
@@ -1343,61 +1343,8 @@
       </div>
     </section>
 
-    <!-- SCENE 4: left job 2 -->
+    <!-- SCENE 4: left job 2, tappable -->
     <section class="scene" data-scene="4">
-      <div class="lockscreen">
-        <div class="statusbar">
-          <span>4:50</span>
-          <div class="icons">
-            <span>38%</span>
-            <div class="battery"><div class="battery-fill" style="width:38%"></div></div>
-          </div>
-        </div>
-        <div class="lock-time">4:50</div>
-        <div class="lock-date">Friday, 21 August</div>
-        <div class="notif-stack">
-          <div class="notif">
-            <div class="notif-icon">T</div>
-            <div class="notif-body">
-              <div class="notif-top"><span class="notif-app">Tradify</span><span class="notif-when">now</span></div>
-              <div class="notif-title">You're Off-Site | 4h 15m saved 👍</div>
-              <div class="notif-desc">Dave Smith</div>
-              <div class="notif-desc">14 Jervois Rd, Herne Bay</div>
-            </div>
-          </div>
-          <div class="notif faded">
-            <div class="notif-icon">T</div>
-            <div class="notif-body">
-              <div class="notif-top"><span class="notif-app">Tradify</span><span class="notif-when">4h ago</span></div>
-              <div class="notif-title">You're On-Site | Timer Started ⏱</div>
-              <div class="notif-desc">Dave Smith</div>
-              <div class="notif-desc">14 Jervois Rd, Herne Bay</div>
-            </div>
-          </div>
-          <div class="notif faded" style="opacity:0.28;">
-            <div class="notif-icon">T</div>
-            <div class="notif-body">
-              <div class="notif-top"><span class="notif-app">Tradify</span><span class="notif-when">5h ago</span></div>
-              <div class="notif-title">You're Off-Site | 3h 50m saved 👍</div>
-              <div class="notif-desc">Sarah Chen</div>
-              <div class="notif-desc">22 Ponsonby Terrace</div>
-            </div>
-          </div>
-          <div class="notif faded" style="opacity:0.18;">
-            <div class="notif-icon">T</div>
-            <div class="notif-body">
-              <div class="notif-top"><span class="notif-app">Tradify</span><span class="notif-when">9h ago</span></div>
-              <div class="notif-title">You're On-Site | Timer Started ⏱</div>
-              <div class="notif-desc">Sarah Chen</div>
-              <div class="notif-desc">22 Ponsonby Terrace</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- SCENE 5: end of day, tappable -->
-    <section class="scene" data-scene="5">
       <div class="lockscreen">
         <div class="statusbar">
           <span>4:50</span>
@@ -1413,20 +1360,12 @@
             <div class="notif-icon">T</div>
             <div class="notif-body">
               <div class="notif-top"><span class="notif-app">Tradify</span><span class="notif-when">now</span></div>
-              <div class="notif-title">Your timesheet's already done</div>
-              <div class="notif-desc">Check it's right, then get paid for 8h 05m.</div>
-            </div>
-          </div>
-          <div class="notif faded">
-            <div class="notif-icon">T</div>
-            <div class="notif-body">
-              <div class="notif-top"><span class="notif-app">Tradify</span><span class="notif-when">just now</span></div>
               <div class="notif-title">You're Off-Site | 4h 15m saved 👍</div>
               <div class="notif-desc">Dave Smith</div>
               <div class="notif-desc">14 Jervois Rd, Herne Bay</div>
             </div>
           </div>
-          <div class="notif faded" style="opacity:0.28;">
+          <div class="notif faded">
             <div class="notif-icon">T</div>
             <div class="notif-body">
               <div class="notif-top"><span class="notif-app">Tradify</span><span class="notif-when">4h ago</span></div>
@@ -1435,7 +1374,7 @@
               <div class="notif-desc">14 Jervois Rd, Herne Bay</div>
             </div>
           </div>
-          <div class="notif faded" style="opacity:0.18;">
+          <div class="notif faded" style="opacity:0.28;">
             <div class="notif-icon">T</div>
             <div class="notif-body">
               <div class="notif-top"><span class="notif-app">Tradify</span><span class="notif-when">5h ago</span></div>
@@ -1444,7 +1383,7 @@
               <div class="notif-desc">22 Ponsonby Terrace</div>
             </div>
           </div>
-          <div class="notif faded" style="opacity:0.12;">
+          <div class="notif faded" style="opacity:0.18;">
             <div class="notif-icon">T</div>
             <div class="notif-body">
               <div class="notif-top"><span class="notif-app">Tradify</span><span class="notif-when">9h ago</span></div>
@@ -1457,8 +1396,8 @@
       </div>
     </section>
 
-    <!-- SCENE 6: review screen -->
-    <section class="scene" data-scene="6">
+    <!-- SCENE 5: review screen -->
+    <section class="scene" data-scene="5">
       <div class="review-stage">
       <div class="appbar">
         <span class="back" id="backFromReview">‹</span>
@@ -1486,8 +1425,8 @@
 
     </section>
 
-    <!-- SCENE 7: timesheets (Pending + Week tabs) -->
-    <section class="scene" data-scene="7">
+    <!-- SCENE 6: timesheets (Pending + Week tabs) -->
+    <section class="scene" data-scene="6">
       <div class="appbar appbar-plain">
         <span class="back plain" id="backFromTimesheets">←</span>
         <div class="appbar-titles centered">
@@ -1686,7 +1625,7 @@
 
 <script>
 (function(){
-  var TOTAL_SCENES = 7;
+  var TOTAL_SCENES = 6;
   var current = 1;
 
   var JOB1_BASE = 230; // minutes, 7:50-11:40 (default boundary, before any dragging)
@@ -1737,7 +1676,7 @@
       ]
     }
   };
-  var reviewBackScene = 5;
+  var reviewBackScene = 4;
   var currentReviewDay = 'Friday, 21 August 2026';
   var submittedDays = {};
 
@@ -1755,7 +1694,7 @@
     currentReviewDay = day;
     setText('reviewDateTitle', reviewDay.title);
     recalc(false);
-    showScene(6, transition);
+    showScene(5, transition);
   }
 
   function getSegments(){ return state.segments; }
@@ -2321,7 +2260,7 @@
   }
 
   function next(){
-    if (current === 5) openReviewDay('Friday, 21 August 2026', 5, 'reveal-up');
+    if (current === 4) openReviewDay('Friday, 21 August 2026', 4, 'reveal-up');
     else if (current < TOTAL_SCENES) showScene(current+1);
   }
   function prev(){ if (current > 1) showScene(current-1); }
@@ -2360,7 +2299,7 @@
   }
 
   // ---- nav wiring ----
-  document.getElementById('openReview').addEventListener('click', function(){ openReviewDay('Friday, 21 August 2026', 5, 'reveal-up'); });
+  document.getElementById('openReview').addEventListener('click', function(){ openReviewDay('Friday, 21 August 2026', 4, 'reveal-up'); });
   document.getElementById('backFromReview').addEventListener('click', function(){ showScene(reviewBackScene); });
 
   function finishTimesheetSubmission(day, minutes, row){
@@ -2400,7 +2339,7 @@
     });
     var isLastRow = pendingRows.length === 1 && !!submittedRow;
 
-    showScene(7, true);
+    showScene(6, true);
     switchTimesheetTab('pending');
     setTimeout(function(){
       if (!submittedRow || isLastRow){
@@ -2442,7 +2381,7 @@
   document.getElementById('pendingList').addEventListener('click', function(e){
     var row = e.target.closest('.day-row.pending');
     if (!row) return;
-    openReviewDay(row.dataset.reviewDay, 7);
+    openReviewDay(row.dataset.reviewDay, 6);
   });
 
   // ---- edit screen ----
@@ -2980,7 +2919,7 @@
 
   groupLockNotifications();
   recalc(false);
-  showScene(6);
+  showScene(5);
 })();
 </script>
 
