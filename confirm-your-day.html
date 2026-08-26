@@ -298,7 +298,7 @@
     transform-origin:center;
   }
   .scene.review-revealing .review-stage{
-    animation:reviewScaleIn .65s cubic-bezier(.32,.72,0,1) both;
+    animation:reviewScaleIn .65s cubic-bezier(.32,.72,0,1) .5s both;
   }
   @keyframes reviewScaleIn{
     from{transform:scale(.9);}
@@ -2197,12 +2197,12 @@
         if (revealFinished) return;
         revealFinished = true;
         active.classList.remove('active', 'scene-exiting-up');
-        target.classList.remove('review-revealing');
       }
       target.classList.add('active', 'review-revealing');
       active.classList.add('scene-exiting-up');
       active.addEventListener('animationend', finishReveal, { once:true });
       setTimeout(finishReveal, 800);
+      setTimeout(function(){ target.classList.remove('review-revealing'); }, 1250);
     } else if (animate && active && active !== target){
       var finished = false;
       function finish(){
