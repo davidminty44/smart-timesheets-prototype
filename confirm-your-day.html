@@ -1654,7 +1654,7 @@
       if (seg.jobLink){
         var linkedJob = state.segments.find(function(s){ return s.type === seg.jobLink; });
         var linkedContact = linkedJob ? contactFor(linkedJob) : JOB_NAMES[seg.jobLink];
-        return (seg.type === 'parts' ? 'Supply run' : (seg.label || 'Travel')) + ' for ' + linkedContact;
+        return (seg.type === 'parts' ? 'Supply run for ' : (seg.label || 'Travel') + ' to ') + linkedContact;
       }
       return seg.label || (seg.type === 'travel' ? 'Travel' : 'Supplies');
     }
