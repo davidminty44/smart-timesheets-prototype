@@ -298,11 +298,11 @@
     transform-origin:center;
   }
   .scene.review-revealing .review-stage{
-    animation:reviewScaleIn .65s cubic-bezier(.32,.72,0,1) .5s both;
+    animation:reviewScaleIn .65s cubic-bezier(.32,.72,0,1) .3s both;
   }
   .scene.review-revealing .appbar,
   .scene.review-revealing .sticky-footer{
-    animation:reviewEdgeWidth .65s cubic-bezier(.32,.72,0,1) .5s both;
+    animation:reviewEdgeWidth .65s cubic-bezier(.32,.72,0,1) .3s both;
     transform-origin:center;
   }
   @keyframes reviewScaleIn{
@@ -2211,7 +2211,7 @@
       active.classList.add('scene-exiting-up');
       active.addEventListener('animationend', finishReveal, { once:true });
       setTimeout(finishReveal, 800);
-      setTimeout(function(){ target.classList.remove('review-revealing'); }, 1250);
+      setTimeout(function(){ target.classList.remove('review-revealing'); }, 1050);
     } else if (animate && active && active !== target){
       var finished = false;
       function finish(){
