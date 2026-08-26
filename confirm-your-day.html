@@ -281,6 +281,24 @@
   .appbar-subtitle{font-size:12.5px; font-weight:400; opacity:0.9; margin-top:1px;}
 
   /* ---------- Review screen ---------- */
+  .scene[data-scene="5"]{
+    background:linear-gradient(to bottom, var(--primary) 0 92px, var(--g1) 92px calc(100% - 88px), #fff calc(100% - 88px) 100%);
+  }
+  .review-stage{
+    position:relative;
+    width:100%;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    transform-origin:center;
+  }
+  .scene.review-revealing .review-stage{
+    animation:reviewScaleIn .65s cubic-bezier(.32,.72,0,1) both;
+  }
+  @keyframes reviewScaleIn{
+    from{transform:scale(.9);}
+    to{transform:scale(1);}
+  }
   .review-scroll{
     flex:1;
     overflow-y:auto;
@@ -1273,6 +1291,7 @@
 
     <!-- SCENE 5: review screen -->
     <section class="scene" data-scene="5">
+      <div class="review-stage">
       <div class="appbar">
         <span class="back" id="backFromReview">‹</span>
         <div class="appbar-titles centered">
@@ -1294,6 +1313,7 @@
 
       <div class="sticky-footer">
         <button class="confirm-btn" id="confirmBtn">Submit timesheet</button>
+      </div>
       </div>
 
     </section>
@@ -2074,8 +2094,9 @@
         if (revealFinished) return;
         revealFinished = true;
         active.classList.remove('active', 'scene-exiting-up');
+        target.classList.remove('review-revealing');
       }
-      target.classList.add('active');
+      target.classList.add('active', 'review-revealing');
       active.classList.add('scene-exiting-up');
       active.addEventListener('animationend', finishReveal, { once:true });
       setTimeout(finishReveal, 800);
@@ -2095,7 +2116,7 @@
       var animateMessages = activeSceneNumber >= 1 && activeSceneNumber <= 4 && n > activeSceneNumber && n <= 4;
       document.querySelectorAll('.scene').forEach(function(s){
         s.classList.toggle('active', s === target);
-        s.classList.remove('scene-entering', 'message-progress');
+        s.classList.remove('scene-entering', 'message-progress', 'review-revealing');
       });
       if (animateMessages){
         target.classList.add('message-progress');
