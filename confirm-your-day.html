@@ -89,7 +89,11 @@
   }
   .scene.scene-entering{
     z-index:2;
-    animation:sceneSlideIn .28s ease-out both;
+    animation:sceneSlideIn .42s cubic-bezier(.32,.72,0,1) both;
+  }
+  .scene.scene-exiting-left{
+    z-index:1;
+    animation:sceneSlideOutLeft .42s cubic-bezier(.32,.72,0,1) both;
   }
   .scene.scene-exiting-up{
     z-index:2;
@@ -98,6 +102,10 @@
   @keyframes sceneSlideIn{
     from{transform:translateX(100%);}
     to{transform:translateX(0);}
+  }
+  @keyframes sceneSlideOutLeft{
+    from{transform:translateX(0);}
+    to{transform:translateX(-100%);}
   }
   @keyframes sceneRevealUp{
     from{transform:translateY(0);}
@@ -352,7 +360,7 @@
   .appbar-subtitle{font-size:12.5px; font-weight:400; opacity:0.9; margin-top:1px;}
 
   /* ---------- Review screen ---------- */
-  .scene[data-scene="5"]{background:var(--g1);}
+  .scene[data-scene="6"]{background:var(--g1);}
   .review-stage{
     position:relative;
     width:100%;
@@ -1238,8 +1246,17 @@
   <div class="screen" id="screen">
     <div class="status-bar"></div>
 
-    <!-- SCENE 1: arrived job 1 -->
+    <!-- SCENE 1: before first notification -->
     <section class="scene active" data-scene="1">
+      <div class="lockscreen">
+        <div class="lock-time">7:50</div>
+        <div class="lock-date">Friday, 21 August</div>
+        <div class="notif-stack"></div>
+      </div>
+    </section>
+
+    <!-- SCENE 2: arrived job 1 -->
+    <section class="scene" data-scene="2">
       <div class="lockscreen">
         <div class="statusbar">
           <span>7:52</span>
@@ -1264,8 +1281,8 @@
       </div>
     </section>
 
-    <!-- SCENE 2: left job 1 -->
-    <section class="scene" data-scene="2">
+    <!-- SCENE 3: left job 1 -->
+    <section class="scene" data-scene="3">
       <div class="lockscreen">
         <div class="statusbar">
           <span>11:40</span>
@@ -1299,8 +1316,8 @@
       </div>
     </section>
 
-    <!-- SCENE 3: arrived job 2 -->
-    <section class="scene" data-scene="3">
+    <!-- SCENE 4: arrived job 2 -->
+    <section class="scene" data-scene="4">
       <div class="lockscreen">
         <div class="statusbar">
           <span>12:35</span>
@@ -1343,8 +1360,8 @@
       </div>
     </section>
 
-    <!-- SCENE 4: left job 2, tappable -->
-    <section class="scene" data-scene="4">
+    <!-- SCENE 5: left job 2, tappable -->
+    <section class="scene" data-scene="5">
       <div class="lockscreen">
         <div class="statusbar">
           <span>4:50</span>
@@ -1396,8 +1413,8 @@
       </div>
     </section>
 
-    <!-- SCENE 5: review screen -->
-    <section class="scene" data-scene="5">
+    <!-- SCENE 6: review screen -->
+    <section class="scene" data-scene="6">
       <div class="review-stage">
       <div class="appbar">
         <span class="back" id="backFromReview">‹</span>
@@ -1425,8 +1442,8 @@
 
     </section>
 
-    <!-- SCENE 6: timesheets (Pending + Week tabs) -->
-    <section class="scene" data-scene="6">
+    <!-- SCENE 7: timesheets (Pending + Week tabs) -->
+    <section class="scene" data-scene="7">
       <div class="appbar appbar-plain">
         <span class="back plain" id="backFromTimesheets">←</span>
         <div class="appbar-titles centered">
@@ -1625,7 +1642,7 @@
 
 <script>
 (function(){
-  var TOTAL_SCENES = 6;
+  var TOTAL_SCENES = 7;
   var current = 1;
 
   var JOB1_BASE = 230; // minutes, 7:50-11:40 (default boundary, before any dragging)
@@ -1676,7 +1693,7 @@
       ]
     }
   };
-  var reviewBackScene = 4;
+  var reviewBackScene = 5;
   var currentReviewDay = 'Friday, 21 August 2026';
   var submittedDays = {};
 
@@ -1694,7 +1711,7 @@
     currentReviewDay = day;
     setText('reviewDateTitle', reviewDay.title);
     recalc(false);
-    showScene(5, transition);
+    showScene(6, transition);
   }
 
   function getSegments(){ return state.segments; }
@@ -2244,23 +2261,24 @@
       function finish(){
         if (finished) return;
         finished = true;
-        active.classList.remove('active');
+        active.classList.remove('active', 'scene-exiting-left');
         target.classList.remove('scene-entering');
       }
       target.classList.add('active', 'scene-entering');
+      active.classList.add('scene-exiting-left');
       target.addEventListener('animationend', finish, { once:true });
-      setTimeout(finish, 400);
+      setTimeout(finish, 550);
     } else {
       document.querySelectorAll('.scene').forEach(function(s){
         s.classList.toggle('active', s === target);
-        s.classList.remove('scene-entering', 'message-progress', 'review-revealing');
+        s.classList.remove('scene-entering', 'scene-exiting-left', 'message-progress', 'review-revealing');
       });
     }
     current = n;
   }
 
   function next(){
-    if (current === 4) openReviewDay('Friday, 21 August 2026', 4, 'reveal-up');
+    if (current === 5) openReviewDay('Friday, 21 August 2026', 5, 'reveal-up');
     else if (current < TOTAL_SCENES) showScene(current+1);
   }
   function prev(){ if (current > 1) showScene(current-1); }
@@ -2299,7 +2317,7 @@
   }
 
   // ---- nav wiring ----
-  document.getElementById('openReview').addEventListener('click', function(){ openReviewDay('Friday, 21 August 2026', 4, 'reveal-up'); });
+  document.getElementById('openReview').addEventListener('click', function(){ openReviewDay('Friday, 21 August 2026', 5, 'reveal-up'); });
   document.getElementById('backFromReview').addEventListener('click', function(){ showScene(reviewBackScene); });
 
   function finishTimesheetSubmission(day, minutes, row){
@@ -2339,7 +2357,7 @@
     });
     var isLastRow = pendingRows.length === 1 && !!submittedRow;
 
-    showScene(6, true);
+    showScene(7, true);
     switchTimesheetTab('pending');
     setTimeout(function(){
       if (!submittedRow || isLastRow){
@@ -2381,7 +2399,7 @@
   document.getElementById('pendingList').addEventListener('click', function(e){
     var row = e.target.closest('.day-row.pending');
     if (!row) return;
-    openReviewDay(row.dataset.reviewDay, 6);
+    openReviewDay(row.dataset.reviewDay, 7);
   });
 
   // ---- edit screen ----
@@ -2919,7 +2937,7 @@
 
   groupLockNotifications();
   recalc(false);
-  showScene(5);
+  showScene(6);
 })();
 </script>
 
