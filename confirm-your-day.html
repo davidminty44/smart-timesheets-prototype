@@ -1498,11 +1498,12 @@
 
   var state = {
     segments: [
-      { id: 1, type: 'job1', duration: JOB1_BASE, break: 0, label: 'Kindy Rewire' },
-      { id: 2, type: 'parts', duration: GAP_MIN, jobLink: 'job2', label: 'Mitre 10' },
-      { id: 3, type: 'job2', duration: JOB2_BASE, break: 0, label: 'Bathroom Reno' }
+      { id: 1, type: 'parts', duration: 30, jobLink: 'job1', label: 'Mitre 10' },
+      { id: 2, type: 'job1', duration: JOB1_BASE, break: 0, label: 'Kindy Rewire' },
+      { id: 3, type: 'travel', duration: 25, jobLink: 'job2', label: 'Travel time' },
+      { id: 4, type: 'job2', duration: JOB2_BASE, break: 0, label: 'Bathroom Reno' }
     ],
-    nextId: 4,
+    nextId: 5,
     lastNewSegment: null,
     lastNewBreak: null
   };
@@ -1512,9 +1513,10 @@
       title: 'Friday, 21 August',
       start: 7 * 60 + 50,
       segments: [
-        { id: 1, type: 'job1', duration: JOB1_BASE, break: 0, label: 'Kindy Rewire' },
-        { id: 2, type: 'parts', duration: GAP_MIN, jobLink: 'job2', label: 'Mitre 10' },
-        { id: 3, type: 'job2', duration: JOB2_BASE, break: 0, label: 'Bathroom Reno' }
+        { id: 1, type: 'parts', duration: 30, jobLink: 'job1', label: 'Mitre 10' },
+        { id: 2, type: 'job1', duration: JOB1_BASE, break: 0, label: 'Kindy Rewire' },
+        { id: 3, type: 'travel', duration: 25, jobLink: 'job2', label: 'Travel time' },
+        { id: 4, type: 'job2', duration: JOB2_BASE, break: 0, label: 'Bathroom Reno' }
       ]
     },
     'Thursday, 20 August 2026': {
@@ -2064,11 +2066,12 @@
   function resetAll(){
     state = {
       segments: [
-        { id: 1, type: 'job1', duration: JOB1_BASE, break: 0, label: 'Kindy Rewire' },
-        { id: 2, type: 'parts', duration: GAP_MIN, jobLink: 'job2', label: 'Mitre 10' },
-        { id: 3, type: 'job2', duration: JOB2_BASE, break: 0, label: 'Bathroom Reno' }
+        { id: 1, type: 'parts', duration: 30, jobLink: 'job1', label: 'Mitre 10' },
+        { id: 2, type: 'job1', duration: JOB1_BASE, break: 0, label: 'Kindy Rewire' },
+        { id: 3, type: 'travel', duration: 25, jobLink: 'job2', label: 'Travel time' },
+        { id: 4, type: 'job2', duration: JOB2_BASE, break: 0, label: 'Bathroom Reno' }
       ],
-      nextId: 4
+      nextId: 5
     };
     submittedDays = {};
     currentReviewDay = 'Friday, 21 August 2026';
