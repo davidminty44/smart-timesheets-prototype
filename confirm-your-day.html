@@ -93,7 +93,7 @@
   }
   .scene.scene-exiting-right{
     z-index:2;
-    animation:sceneSlideOutRight .75s cubic-bezier(.2,.8,.2,1) .7s both;
+    animation:sceneSlideOutRight .75s cubic-bezier(.2,.8,.2,1) .4s both;
     box-shadow:-14px 0 28px rgba(0,0,0,.2);
   }
   .scene.scene-exiting-up{
@@ -2302,7 +2302,7 @@
       target.classList.add('active', 'scene-entering');
       active.classList.add('scene-exiting-right');
       active.addEventListener('animationend', finish, { once:true });
-      setTimeout(finish, 1600);
+      setTimeout(finish, 1300);
     } else {
       document.querySelectorAll('.scene').forEach(function(s){
         s.classList.toggle('active', s === target);
