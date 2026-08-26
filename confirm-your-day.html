@@ -93,7 +93,7 @@
   }
   .scene.scene-exiting-up{
     z-index:2;
-    animation:sceneRevealUp .48s cubic-bezier(.4,0,.15,1) both;
+    animation:sceneRevealUp .65s cubic-bezier(.32,.72,0,1) both;
   }
   @keyframes sceneSlideIn{
     from{transform:translateX(100%);}
@@ -2078,7 +2078,7 @@
       target.classList.add('active');
       active.classList.add('scene-exiting-up');
       active.addEventListener('animationend', finishReveal, { once:true });
-      setTimeout(finishReveal, 600);
+      setTimeout(finishReveal, 800);
     } else if (animate && active && active !== target){
       var finished = false;
       function finish(){
@@ -2105,7 +2105,10 @@
     current = n;
   }
 
-  function next(){ if (current < TOTAL_SCENES) showScene(current+1); }
+  function next(){
+    if (current === 4) openReviewDay('Friday, 21 August 2026', 4, 'reveal-up');
+    else if (current < TOTAL_SCENES) showScene(current+1);
+  }
   function prev(){ if (current > 1) showScene(current-1); }
 
   var initialPendingListHtml = document.getElementById('pendingList').innerHTML;
