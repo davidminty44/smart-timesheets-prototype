@@ -1482,25 +1482,6 @@
   </div>
 </div>
 
-<div class="controls" id="controls">
-  <div class="controls-row" id="sceneButtons">
-    <button class="ctrl-btn" data-jump="1"><span>1</span><span>Arrived job 1</span></button>
-    <button class="ctrl-btn" data-jump="2"><span>2</span><span>Left job 1</span></button>
-    <button class="ctrl-btn" data-jump="3"><span>3</span><span>Arrived job 2</span></button>
-    <button class="ctrl-btn" data-jump="4"><span>4</span><span>End of day</span></button>
-    <button class="ctrl-btn" data-jump="5"><span>5</span><span>Review</span></button>
-    <button class="ctrl-btn" data-jump="6"><span>6</span><span>Confirmed</span></button>
-    <button class="ctrl-btn" data-jump="7"><span>7</span><span>Edit entry</span></button>
-  </div>
-  <div class="controls-row">
-    <button class="ctrl-btn" id="prevBtn">← Prev</button>
-    <button class="ctrl-btn" id="nextBtn">Next →</button>
-    <button class="ctrl-btn" id="resetBtn">Reset (R)</button>
-    <button class="ctrl-btn" id="hideBtn">Hide (H)</button>
-  </div>
-  <div class="hint-text">Keyboard: ← → step · 1–6 jump to scene · 7 opens edit entry · R reset · H hide controls · Esc closes edit</div>
-</div>
-
 <script>
 (function(){
   var TOTAL_SCENES = 6;
@@ -2719,40 +2700,10 @@
   });
 
   // ---- filming controls ----
-  document.querySelectorAll('#sceneButtons .ctrl-btn').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      var jump = parseInt(btn.dataset.jump, 10);
-      if (jump === 7){
-        showScene(5);
-        if (state.segments[0]) openEdit(state.segments[0].id);
-      } else {
-        showScene(jump);
-      }
-    });
-  });
-  document.getElementById('prevBtn').addEventListener('click', prev);
-  document.getElementById('nextBtn').addEventListener('click', next);
-  document.getElementById('resetBtn').addEventListener('click', resetAll);
-
-  var controlsHidden = false;
-  document.getElementById('hideBtn').addEventListener('click', function(){
-    controlsHidden = !controlsHidden;
-    document.getElementById('controls').classList.toggle('hidden', controlsHidden);
-  });
-
   document.addEventListener('keydown', function(e){
     if (e.key === 'ArrowRight'){ next(); }
     else if (e.key === 'ArrowLeft'){ prev(); }
-    else if (e.key >= '1' && e.key <= '6'){ showScene(parseInt(e.key,10)); }
-    else if (e.key === '7'){
-      showScene(5);
-      if (state.segments[0]) openEdit(state.segments[0].id);
-    }
-    else if (e.key === 'r' || e.key === 'R'){ resetAll(); }
-    else if (e.key === 'h' || e.key === 'H'){
-      controlsHidden = !controlsHidden;
-      document.getElementById('controls').classList.toggle('hidden', controlsHidden);
-    } else if (e.key === 'Escape'){
+    else if (e.key === 'Escape'){
       if (editOverlay.classList.contains('open')) document.getElementById('editCancelBtn').click();
     }
   });
