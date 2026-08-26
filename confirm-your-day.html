@@ -171,24 +171,19 @@
     flex:1;
     justify-content:flex-start;
   }
-  .scene.message-progress .lock-time{animation:lockTimeChange .4s ease-out both;}
   .scene.message-progress .notif:first-child{animation:notifArrive .5s cubic-bezier(.2,.8,.2,1) both;}
   .scene.message-progress .notif:nth-child(2){animation:notifPushDownFade .5s cubic-bezier(.2,.8,.2,1) both;}
   .scene.message-progress .notif:nth-child(n+3){animation:notifPushDown .5s cubic-bezier(.2,.8,.2,1) both;}
-  @keyframes lockTimeChange{
-    from{opacity:1; transform:translateY(-5px);}
-    to{opacity:1; transform:translateY(0);}
-  }
   @keyframes notifArrive{
-    from{opacity:1; transform:translateY(-84px) scale(.98);}
+    from{opacity:1; transform:translateY(calc(-1 * var(--notif-shift))) scale(.98);}
     to{opacity:1; transform:translateY(0) scale(1);}
   }
   @keyframes notifPushDownFade{
-    from{opacity:1; transform:translateY(-84px);}
+    from{opacity:1; transform:translateY(calc(-1 * var(--notif-shift)));}
     to{opacity:.45; transform:translateY(0);}
   }
   @keyframes notifPushDown{
-    from{transform:translateY(-84px);}
+    from{transform:translateY(calc(-1 * var(--notif-shift)));}
     to{transform:translateY(0);}
   }
   .notif{
@@ -2119,8 +2114,15 @@
         s.classList.remove('scene-entering', 'message-progress', 'review-revealing');
       });
       if (animateMessages){
+        var incomingNotification = target.querySelector('.notif:first-child');
+        var notificationGap = 10;
+        var notificationShift = incomingNotification ? incomingNotification.getBoundingClientRect().height + notificationGap : 0;
+        target.style.setProperty('--notif-shift', notificationShift + 'px');
         target.classList.add('message-progress');
-        setTimeout(function(){ target.classList.remove('message-progress'); }, 600);
+        setTimeout(function(){
+          target.classList.remove('message-progress');
+          target.style.removeProperty('--notif-shift');
+        }, 600);
       }
     }
     current = n;
