@@ -824,6 +824,48 @@
   }
   .edit-round-btn:disabled{opacity:0.4; cursor:default;}
   .edit-round-btn:active{opacity:0.7;}
+  .edit-sheet.simple{
+    height:256px; max-height:none; padding:0; border-radius:8px 8px 0 0;
+  }
+  .edit-sheet.simple .sheet-handle{
+    width:36px; height:4px; margin:17px auto 0;
+  }
+  .edit-sheet.simple .edit-sheet-header{
+    height:49px; padding:0 22px;
+  }
+  .edit-sheet.simple .edit-sheet-header .appbar-title{
+    font-size:17px; font-weight:600; color:#000;
+  }
+  .edit-sheet.simple #editCancelBtn,
+  .edit-sheet.simple #editSaveBtn{
+    font-size:14px; line-height:20px;
+  }
+  .edit-sheet.simple .edit-screen{
+    flex:1; overflow:hidden; padding:24px 0 0;
+  }
+  .edit-sheet.simple .edit-time-boxes{
+    gap:16px; margin:0 20px;
+  }
+  .edit-sheet.simple .edit-time-box{
+    height:49px; min-width:0; padding:0 12px; gap:10px;
+    justify-content:center; border-width:1px; border-radius:10px;
+  }
+  .edit-sheet.simple .edit-time-box-label{
+    font-size:16px; font-weight:400; color:var(--g6);
+  }
+  .edit-sheet.simple .edit-time-box-value{
+    font-size:18px; font-weight:400; color:var(--g7); text-transform:uppercase;
+  }
+  .edit-sheet.simple .edit-round-row,
+  .edit-sheet.simple .field-list{
+    display:none;
+  }
+  .edit-sheet.simple .sheet-divider{
+    margin:30px 20px 12px;
+  }
+  .edit-sheet.simple .edit-delete-text{
+    margin:0; padding:0; font-size:14px; line-height:20px; color:#FF3B4D;
+  }
 
   .sticky-footer{
     position:absolute;
@@ -1494,7 +1536,7 @@
 
     <!-- Edit entry — slides up over whatever's underneath, same as the Break sheet -->
     <div class="sheet-overlay" id="editOverlay">
-      <div class="sheet edit-sheet" id="editSheet">
+      <div class="sheet edit-sheet simple" id="editSheet">
         <div class="sheet-handle"></div>
         <div class="edit-sheet-header">
           <div class="appbar-cancel-btn" id="editCancelBtn">Cancel</div>
@@ -2370,12 +2412,11 @@
     var submittedRow = pendingRows.find(function(row){
       return row.dataset.reviewDay === submittedDay;
     });
-    var isLastRow = pendingRows.length === 1 && !!submittedRow;
 
     showScene(8, true);
     switchTimesheetTab('pending');
     setTimeout(function(){
-      if (!submittedRow || isLastRow){
+      if (!submittedRow){
         finishTimesheetSubmission(submittedDay, submittedMinutes, submittedRow);
         return;
       }
