@@ -98,7 +98,7 @@
   }
   .scene.scene-exiting-up{
     z-index:2;
-    animation:sceneRevealUp .65s cubic-bezier(.32,.72,0,1) both;
+    animation:sceneRevealUp 1.05s cubic-bezier(.32,.72,0,1) both;
   }
   @keyframes sceneSlideIn{
     from{transform:translateX(-28%);}
@@ -2239,7 +2239,7 @@
       target.classList.add('active', 'review-revealing');
       active.classList.add('scene-exiting-up');
       active.addEventListener('animationend', finishReveal, { once:true });
-      setTimeout(finishReveal, 800);
+      setTimeout(finishReveal, 1200);
       setTimeout(function(){ target.classList.remove('review-revealing'); }, 1050);
     } else if ((animate === 'notif-fwd' || animate === 'notif-back') && active && active !== target){
       var forward = animate === 'notif-fwd';
