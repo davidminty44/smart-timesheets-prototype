@@ -102,12 +102,17 @@
     animation:sceneRevealUp .65s cubic-bezier(.32,.72,0,1) both;
   }
   .scene.scene-fade-in{
-    z-index:1;
-    animation:notifSceneIn .38s cubic-bezier(.33,1,.68,1) both;
+    z-index:2;
+    animation:notifSceneIn .3s cubic-bezier(.33,1,.68,1) both;
   }
   .scene.scene-fade-out{
-    z-index:2;
-    animation:notifSceneOut .26s cubic-bezier(.32,0,.67,0) both;
+    z-index:1;
+    animation:notifSceneOut .18s cubic-bezier(.32,0,.67,0) both;
+  }
+  .scene.scene-fade-in .notif,
+  .scene.scene-fade-out .notif{
+    backdrop-filter:none;
+    -webkit-backdrop-filter:none;
   }
   @keyframes sceneSlideIn{
     from{transform:translateX(-28%);}
@@ -121,14 +126,8 @@
     from{transform:translateY(0);}
     to{transform:translateY(-100%);}
   }
-  @keyframes notifSceneIn{
-    from{opacity:0; transform:translateY(var(--scene-enter-y, 10px));}
-    to{opacity:1; transform:translateY(0);}
-  }
-  @keyframes notifSceneOut{
-    from{opacity:1; transform:translateY(0);}
-    to{opacity:0; transform:translateY(var(--scene-exit-y, -10px));}
-  }
+  @keyframes notifSceneIn{from{opacity:0;} to{opacity:1;}}
+  @keyframes notifSceneOut{from{opacity:1;} to{opacity:0;}}
   @keyframes notifSceneInReduced{from{opacity:0;} to{opacity:1;}}
   @keyframes notifSceneOutReduced{from{opacity:1;} to{opacity:0;}}
   @media (prefers-reduced-motion: reduce){
@@ -2257,16 +2256,10 @@
       setTimeout(finishReveal, 800);
       setTimeout(function(){ target.classList.remove('review-revealing'); }, 1050);
     } else if ((animate === 'notif-fwd' || animate === 'notif-back') && active && active !== target){
-      var enterOffset = animate === 'notif-fwd' ? '10px' : '-10px';
-      var exitOffset = animate === 'notif-fwd' ? '-10px' : '10px';
       var screen = document.getElementById('screen');
       var notificationFinished = false;
       sceneTransitioning = true;
       screen.classList.add('lock-transitioning');
-      target.style.setProperty('--scene-enter-y', enterOffset);
-      target.style.setProperty('--scene-exit-y', exitOffset);
-      active.style.setProperty('--scene-enter-y', enterOffset);
-      active.style.setProperty('--scene-exit-y', exitOffset);
       function finishNotification(){
         if (notificationFinished) return;
         notificationFinished = true;
@@ -2275,10 +2268,6 @@
         target.removeEventListener('animationend', onNotificationEnd);
         active.classList.remove('active', 'scene-fade-out');
         target.classList.remove('scene-fade-in');
-        active.style.removeProperty('--scene-enter-y');
-        active.style.removeProperty('--scene-exit-y');
-        target.style.removeProperty('--scene-enter-y');
-        target.style.removeProperty('--scene-exit-y');
       }
       function onNotificationEnd(event){
         if (event.target === target) finishNotification();
@@ -2286,7 +2275,7 @@
       target.classList.add('active', 'scene-fade-in');
       active.classList.add('scene-fade-out');
       target.addEventListener('animationend', onNotificationEnd);
-      setTimeout(finishNotification, 450);
+      setTimeout(finishNotification, 350);
     } else if (animate && active && active !== target){
       var finished = false;
       sceneTransitioning = true;
@@ -2305,8 +2294,6 @@
       document.querySelectorAll('.scene').forEach(function(s){
         s.classList.toggle('active', s === target);
         s.classList.remove('scene-entering', 'scene-exiting-right', 'scene-exiting-up', 'scene-fade-in', 'scene-fade-out', 'review-revealing');
-        s.style.removeProperty('--scene-enter-y');
-        s.style.removeProperty('--scene-exit-y');
       });
       document.getElementById('screen').classList.remove('lock-transitioning');
       sceneTransitioning = false;
