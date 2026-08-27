@@ -52,6 +52,7 @@
     overflow:hidden;
     background:#fff;
   }
+  .screen.lock-transitioning{background:#374557;}
   .notch{
     position:absolute;
     top:30px; left:50%;
@@ -100,6 +101,14 @@
     z-index:2;
     animation:sceneRevealUp .65s cubic-bezier(.32,.72,0,1) both;
   }
+  .scene.scene-fade-in{
+    z-index:1;
+    animation:notifSceneIn .38s cubic-bezier(.33,1,.68,1) both;
+  }
+  .scene.scene-fade-out{
+    z-index:2;
+    animation:notifSceneOut .26s cubic-bezier(.32,0,.67,0) both;
+  }
   @keyframes sceneSlideIn{
     from{transform:translateX(-28%);}
     to{transform:translateX(0);}
@@ -112,8 +121,20 @@
     from{transform:translateY(0);}
     to{transform:translateY(-100%);}
   }
+  @keyframes notifSceneIn{
+    from{opacity:0; transform:translateY(var(--scene-enter-y, 10px));}
+    to{opacity:1; transform:translateY(0);}
+  }
+  @keyframes notifSceneOut{
+    from{opacity:1; transform:translateY(0);}
+    to{opacity:0; transform:translateY(var(--scene-exit-y, -10px));}
+  }
+  @keyframes notifSceneInReduced{from{opacity:0;} to{opacity:1;}}
+  @keyframes notifSceneOutReduced{from{opacity:1;} to{opacity:0;}}
   @media (prefers-reduced-motion: reduce){
     .scene{transition:none;}
+    .scene.scene-fade-in{animation:notifSceneInReduced .15s linear both;}
+    .scene.scene-fade-out{animation:notifSceneOutReduced .15s linear both;}
   }
 
   /* ---------- Status bar (lock screens) ---------- */
@@ -179,31 +200,6 @@
     gap:10px;
     flex:1;
     justify-content:flex-start;
-  }
-  .scene.message-progress .notif.message-new{animation:notifArrive .5s cubic-bezier(.2,.8,.2,1) both;}
-  .scene.message-progress .notif.message-age-1{animation:notifPushDownFade1 .5s cubic-bezier(.2,.8,.2,1) both;}
-  .scene.message-progress .notif.message-age-2{animation:notifPushDownFade2 .5s cubic-bezier(.2,.8,.2,1) both;}
-  .scene.message-progress .notif.message-age-3{animation:notifPushDownFade3 .5s cubic-bezier(.2,.8,.2,1) both;}
-  .scene.message-progress .notif.message-age-4{animation:notifPushDownFade4 .5s cubic-bezier(.2,.8,.2,1) both;}
-  @keyframes notifArrive{
-    from{opacity:1; transform:translateY(calc(-1 * var(--notif-shift))) scale(.98);}
-    to{opacity:1; transform:translateY(0) scale(1);}
-  }
-  @keyframes notifPushDownFade1{
-    from{opacity:1; transform:translateY(calc(-1 * var(--notif-shift)));}
-    to{opacity:.45; transform:translateY(0);}
-  }
-  @keyframes notifPushDownFade2{
-    from{opacity:.45; transform:translateY(calc(-1 * var(--notif-shift)));}
-    to{opacity:.28; transform:translateY(0);}
-  }
-  @keyframes notifPushDownFade3{
-    from{opacity:.28; transform:translateY(calc(-1 * var(--notif-shift)));}
-    to{opacity:.18; transform:translateY(0);}
-  }
-  @keyframes notifPushDownFade4{
-    from{opacity:.18; transform:translateY(calc(-1 * var(--notif-shift)));}
-    to{opacity:.12; transform:translateY(0);}
   }
   .notif-stack.grouped{padding-left:14px;}
   .job-group{
@@ -1645,6 +1641,7 @@
 (function(){
   var TOTAL_SCENES = 8;
   var current = 1;
+  var sceneTransitioning = false;
 
   var JOB1_BASE = 230; // minutes, 7:50-11:40 (default boundary, before any dragging)
   var JOB2_BASE = 255; // minutes, 12:35-4:50 (default boundary, before any dragging)
@@ -2244,12 +2241,14 @@
   function showScene(n, animate){
     var target = document.querySelector('.scene[data-scene="' + n + '"]');
     var active = document.querySelector('.scene.active');
-    if (!target) return;
+    if (!target || sceneTransitioning) return;
     if (animate === 'reveal-up' && active && active !== target){
       var revealFinished = false;
+      sceneTransitioning = true;
       function finishReveal(){
         if (revealFinished) return;
         revealFinished = true;
+        sceneTransitioning = false;
         active.classList.remove('active', 'scene-exiting-up');
       }
       target.classList.add('active', 'review-revealing');
@@ -2257,11 +2256,44 @@
       active.addEventListener('animationend', finishReveal, { once:true });
       setTimeout(finishReveal, 800);
       setTimeout(function(){ target.classList.remove('review-revealing'); }, 1050);
+    } else if ((animate === 'notif-fwd' || animate === 'notif-back') && active && active !== target){
+      var enterOffset = animate === 'notif-fwd' ? '10px' : '-10px';
+      var exitOffset = animate === 'notif-fwd' ? '-10px' : '10px';
+      var screen = document.getElementById('screen');
+      var notificationFinished = false;
+      sceneTransitioning = true;
+      screen.classList.add('lock-transitioning');
+      target.style.setProperty('--scene-enter-y', enterOffset);
+      target.style.setProperty('--scene-exit-y', exitOffset);
+      active.style.setProperty('--scene-enter-y', enterOffset);
+      active.style.setProperty('--scene-exit-y', exitOffset);
+      function finishNotification(){
+        if (notificationFinished) return;
+        notificationFinished = true;
+        sceneTransitioning = false;
+        screen.classList.remove('lock-transitioning');
+        target.removeEventListener('animationend', onNotificationEnd);
+        active.classList.remove('active', 'scene-fade-out');
+        target.classList.remove('scene-fade-in');
+        active.style.removeProperty('--scene-enter-y');
+        active.style.removeProperty('--scene-exit-y');
+        target.style.removeProperty('--scene-enter-y');
+        target.style.removeProperty('--scene-exit-y');
+      }
+      function onNotificationEnd(event){
+        if (event.target === target) finishNotification();
+      }
+      target.classList.add('active', 'scene-fade-in');
+      active.classList.add('scene-fade-out');
+      target.addEventListener('animationend', onNotificationEnd);
+      setTimeout(finishNotification, 450);
     } else if (animate && active && active !== target){
       var finished = false;
+      sceneTransitioning = true;
       function finish(){
         if (finished) return;
         finished = true;
+        sceneTransitioning = false;
         active.classList.remove('active', 'scene-exiting-right');
         target.classList.remove('scene-entering');
       }
@@ -2272,19 +2304,27 @@
     } else {
       document.querySelectorAll('.scene').forEach(function(s){
         s.classList.toggle('active', s === target);
-        s.classList.remove('scene-entering', 'scene-exiting-right', 'message-progress', 'review-revealing');
+        s.classList.remove('scene-entering', 'scene-exiting-right', 'scene-exiting-up', 'scene-fade-in', 'scene-fade-out', 'review-revealing');
+        s.style.removeProperty('--scene-enter-y');
+        s.style.removeProperty('--scene-exit-y');
       });
+      document.getElementById('screen').classList.remove('lock-transitioning');
+      sceneTransitioning = false;
     }
     current = n;
   }
 
   function next(){
-    if (current === 1) showScene(3);
+    if (sceneTransitioning) return;
+    if (current === 1) showScene(3, 'notif-fwd');
     else if (current === 6) openReviewDay('Friday, 21 August 2026', 6, 'reveal-up');
+    else if (current >= 3 && current < 6) showScene(current+1, 'notif-fwd');
     else if (current < TOTAL_SCENES) showScene(current+1);
   }
   function prev(){
-    if (current === 3) showScene(1);
+    if (sceneTransitioning) return;
+    if (current === 3) showScene(1, 'notif-back');
+    else if (current > 3 && current <= 6) showScene(current-1, 'notif-back');
     else if (current > 1) showScene(current-1);
   }
 
