@@ -1434,7 +1434,7 @@
       </div>
       <div class="week-screen">
         <div class="tabs">
-          <div class="tab active" data-tab="pending">Pending Review <span class="badge" id="pendingBadge">3</span></div>
+          <div class="tab active" data-tab="pending">Pending Review <span class="badge" id="pendingBadge">1</span></div>
           <div class="tab" data-tab="week">Week</div>
         </div>
 
@@ -1444,20 +1444,6 @@
               <div class="day-row-left">
                 <span class="day-date-full">Friday 21 Aug 2026</span>
                 <span class="day-source">GPS tracked · 9h 00m</span>
-              </div>
-              <span class="chevron">›</span>
-            </div>
-            <div class="day-row pending" data-review-day="Thursday, 20 August 2026">
-              <div class="day-row-left">
-                <span class="day-date-full">Thursday 20 Aug 2026</span>
-                <span class="day-source">All day · GPS tracked · 7h 30m</span>
-              </div>
-              <span class="chevron">›</span>
-            </div>
-            <div class="day-row pending" data-review-day="Wednesday, 19 August 2026">
-              <div class="day-row-left">
-                <span class="day-date-full">Wednesday 19 Aug 2026</span>
-                <span class="day-source">All day · GPS tracked · 8h 00m</span>
               </div>
               <span class="chevron">›</span>
             </div>
@@ -2330,10 +2316,9 @@
     currentReviewDay = 'Friday, 21 August 2026';
     document.getElementById('pendingList').innerHTML = initialPendingListHtml;
     document.getElementById('pendingList').style.display = '';
-    setText('pendingCountText', '3 days to review');
-    document.getElementById('pendingBadge').textContent = '3';
+    setText('pendingCountText', '1 day to review');
+    document.getElementById('pendingBadge').textContent = '1';
     document.getElementById('pendingBadge').style.display = '';
-    document.querySelector('.pending-intro').style.display = '';
     document.getElementById('pendingEmpty').classList.remove('active');
     ['19', '20', '21'].forEach(function(day){
       setText('weekHours' + day, '00:00');
@@ -2360,7 +2345,6 @@
     var badge = document.getElementById('pendingBadge');
     badge.textContent = remaining;
     badge.style.display = remaining ? '' : 'none';
-    document.querySelector('.pending-intro').style.display = remaining ? '' : 'none';
     document.getElementById('pendingList').style.display = remaining ? '' : 'none';
     document.getElementById('pendingEmpty').classList.toggle('active', remaining === 0);
 
