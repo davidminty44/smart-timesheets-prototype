@@ -52,7 +52,6 @@
     overflow:hidden;
     background:#fff;
   }
-  .screen.lock-transitioning{background:#374557;}
   .notch{
     position:absolute;
     top:30px; left:50%;
@@ -101,19 +100,6 @@
     z-index:2;
     animation:sceneRevealUp .65s cubic-bezier(.32,.72,0,1) both;
   }
-  .scene.scene-fade-in{
-    z-index:2;
-    animation:notifSceneIn .3s cubic-bezier(.33,1,.68,1) both;
-  }
-  .scene.scene-fade-out{
-    z-index:1;
-    animation:notifSceneOut .18s cubic-bezier(.32,0,.67,0) both;
-  }
-  .scene.scene-fade-in .notif,
-  .scene.scene-fade-out .notif{
-    backdrop-filter:none;
-    -webkit-backdrop-filter:none;
-  }
   @keyframes sceneSlideIn{
     from{transform:translateX(-28%);}
     to{transform:translateX(0);}
@@ -126,14 +112,8 @@
     from{transform:translateY(0);}
     to{transform:translateY(-100%);}
   }
-  @keyframes notifSceneIn{from{opacity:0;} to{opacity:1;}}
-  @keyframes notifSceneOut{from{opacity:1;} to{opacity:0;}}
-  @keyframes notifSceneInReduced{from{opacity:0;} to{opacity:1;}}
-  @keyframes notifSceneOutReduced{from{opacity:1;} to{opacity:0;}}
   @media (prefers-reduced-motion: reduce){
     .scene{transition:none;}
-    .scene.scene-fade-in{animation:notifSceneInReduced .15s linear both;}
-    .scene.scene-fade-out{animation:notifSceneOutReduced .15s linear both;}
   }
 
   /* ---------- Status bar (lock screens) ---------- */
@@ -199,6 +179,18 @@
     gap:10px;
     flex:1;
     justify-content:flex-start;
+  }
+  .scene.notification-progress .notif.notification-moving{
+    position:relative;
+    animation:notificationSettle .38s cubic-bezier(.22,1,.36,1) both;
+  }
+  .scene.notification-progress .notif.notification-new{z-index:2;}
+  @keyframes notificationSettle{
+    from{opacity:var(--notif-from-opacity); transform:translateY(var(--notif-start-y)) scale(var(--notif-start-scale, 1));}
+    to{opacity:var(--notif-to-opacity); transform:translateY(0) scale(1);}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .scene.notification-progress .notif.notification-moving{animation:none;}
   }
   .notif-stack.grouped{padding-left:14px;}
   .job-group{
@@ -275,16 +267,10 @@
     display:flex;
     gap:10px;
     align-items:flex-start;
-    animation: dropIn .7s ease;
     cursor:default;
   }
-  @media (prefers-reduced-motion: reduce){ .notif{animation:none;} }
   .notif.tappable{cursor:pointer;}
   .notif.faded{opacity:0.45;}
-  @keyframes dropIn{
-    from{opacity:0; transform:translateY(-14px);}
-    to{opacity:1; transform:translateY(0);}
-  }
   .notif-icon{
     width:28px; height:28px;
     border-radius:8px;
@@ -2256,26 +2242,40 @@
       setTimeout(finishReveal, 800);
       setTimeout(function(){ target.classList.remove('review-revealing'); }, 1050);
     } else if ((animate === 'notif-fwd' || animate === 'notif-back') && active && active !== target){
-      var screen = document.getElementById('screen');
-      var notificationFinished = false;
-      sceneTransitioning = true;
-      screen.classList.add('lock-transitioning');
-      function finishNotification(){
-        if (notificationFinished) return;
-        notificationFinished = true;
-        sceneTransitioning = false;
-        screen.classList.remove('lock-transitioning');
-        target.removeEventListener('animationend', onNotificationEnd);
-        active.classList.remove('active', 'scene-fade-out');
-        target.classList.remove('scene-fade-in');
+      var forward = animate === 'notif-fwd';
+      var sourceNotifications = Array.from(active.querySelectorAll('.notif'));
+      var targetNotifications = Array.from(target.querySelectorAll('.notif'));
+      var referenceNotification = forward ? targetNotifications[0] : sourceNotifications[0];
+      var shift = referenceNotification ? referenceNotification.offsetHeight + 10 : 0;
+      active.classList.remove('active');
+      target.classList.add('active');
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && targetNotifications.length){
+        var opacitySteps = forward ? ['1', '0.45', '0.28', '0.18'] : ['0.45', '0.28', '0.18', '0.12'];
+        sceneTransitioning = true;
+        target.classList.add('notification-progress');
+        targetNotifications.forEach(function(notification, index){
+          var finalOpacity = notification.style.opacity || (notification.classList.contains('faded') ? '0.45' : '1');
+          var isNew = forward && index === 0;
+          var opacityIndex = forward ? Math.max(0, index - 1) : index;
+          notification.style.setProperty('--notif-from-opacity', isNew ? '0' : opacitySteps[Math.min(opacityIndex, opacitySteps.length - 1)]);
+          notification.style.setProperty('--notif-to-opacity', finalOpacity);
+          notification.style.setProperty('--notif-start-y', isNew ? '-14px' : (forward ? -shift : shift) + 'px');
+          notification.style.setProperty('--notif-start-scale', isNew ? '0.985' : '1');
+          notification.classList.add('notification-moving');
+          notification.classList.toggle('notification-new', isNew);
+        });
+        setTimeout(function(){
+          target.classList.remove('notification-progress');
+          targetNotifications.forEach(function(notification){
+            notification.classList.remove('notification-moving', 'notification-new');
+            notification.style.removeProperty('--notif-from-opacity');
+            notification.style.removeProperty('--notif-to-opacity');
+            notification.style.removeProperty('--notif-start-y');
+            notification.style.removeProperty('--notif-start-scale');
+          });
+          sceneTransitioning = false;
+        }, 420);
       }
-      function onNotificationEnd(event){
-        if (event.target === target) finishNotification();
-      }
-      target.classList.add('active', 'scene-fade-in');
-      active.classList.add('scene-fade-out');
-      target.addEventListener('animationend', onNotificationEnd);
-      setTimeout(finishNotification, 350);
     } else if (animate && active && active !== target){
       var finished = false;
       sceneTransitioning = true;
@@ -2293,9 +2293,8 @@
     } else {
       document.querySelectorAll('.scene').forEach(function(s){
         s.classList.toggle('active', s === target);
-        s.classList.remove('scene-entering', 'scene-exiting-right', 'scene-exiting-up', 'scene-fade-in', 'scene-fade-out', 'review-revealing');
+        s.classList.remove('scene-entering', 'scene-exiting-right', 'scene-exiting-up', 'notification-progress', 'review-revealing');
       });
-      document.getElementById('screen').classList.remove('lock-transitioning');
       sceneTransitioning = false;
     }
     current = n;
